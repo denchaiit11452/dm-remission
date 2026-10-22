@@ -32,6 +32,16 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.end.local
+!.env.example
+
+# local tool config & AI agent files
+.impeccable/
+.agent/
+.claude/
+.cursor/
+.gemini/
+*.exe
 
 # vercel
 .vercel

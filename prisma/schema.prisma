@@ -1,0 +1,506 @@
+// =============================================================================
+// ระบบติดตามผู้ป่วย DM Remission (เบาหวานระยะสงบ)
+// Stack: Next.js + Prisma + Supabase (PostgreSQL)
+//
+// หมายเหตุสำคัญ
+// - ร่างนี้เขียนตามรูปแบบ Prisma 5/6 (url / directUrl อยู่ใน datasource)
+//   ถ้าใช้ Prisma 7 ให้ย้าย url ไปไว้ใน prisma.config.ts และปรับ generator ตามเอกสาร
+// - Prisma เชื่อมฐานข้อมูลโดยตรงและข้าม Row Level Security ของ Supabase
+//   การตรวจสิทธิ์ (โดยเฉพาะพิกัดผู้ป่วย) ต้องทำที่ชั้น server (src/lib/data/*) เสมอ
+// - ไม่มีการลบข้อมูลถาวร: ผู้ป่วยใช้ deletedAt, ผลตรวจใช้ voidedAt, audit ไม่ลบ
+// - เกณฑ์ทางคลินิกทั้งหมดอยู่ในตาราง risk_rule_sets (ไม่ฝังในโปรแกรม)
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // connection pooling (Supabase pooler)
+  directUrl = env("DIRECT_URL")   // ใช้ตอนรัน migrate
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+/// บทบาทผู้ใช้งาน
+enum Role {
+  ADMIN
+  DOCTOR
+  STAFF // พยาบาล/เจ้าหน้าที่
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum DiabetesType {
+  TYPE1
+  TYPE2
+  OTHER
+  UNKNOWN
+}
+
+/// สถานะของผู้ป่วยในโปรแกรม (แยกจากระดับความเสี่ยง)
+enum ProgramStatus {
+  IN_PROGRAM      // กำลังเข้าโปรแกรม
+  REMISSION       // อยู่ในภาวะสงบ
+  LOST_REMISSION  // หลุดจากภาวะสงบ
+  DISCHARGED      // ออกจากโปรแกรม
+}
+
+/// ระดับความเสี่ยง 5 ระดับ (เรียงจากเบาไปหนัก)
+enum RiskLevel {
+  WELL_CONTROLLED // ควบคุมได้ดี
+  UNCONTROLLED    // ยังคุมไม่ได้
+  WATCH           // เฝ้าระวัง
+  HIGH            // ความเสี่ยงสูง
+  CRITICAL        // วิกฤต
+}
+
+/// ช่วงเวลาที่วัดน้ำตาล (DTX)
+enum GlucosePeriod {
+  BEFORE_BREAKFAST
+  AFTER_BREAKFAST
+  BEFORE_DINNER
+  AFTER_DINNER
+}
+
+/// กรณีเครื่อง DTX ไม่แสดงตัวเลข (ขึ้น LO / HI)
+enum MeterFlag {
+  NONE      // มีค่าตัวเลขปกติ
+  METER_LOW // เครื่องขึ้น LO (ต่ำกว่าช่วงที่เครื่องวัดได้)
+  METER_HIGH // เครื่องขึ้น HI (สูงกว่าช่วงที่เครื่องวัดได้)
+}
+
+enum DataSource {
+  MANUAL
+  CSV
+}
+
+enum AssessmentSource {
+  AUTO     // ระบบคำนวณจากเกณฑ์
+  OVERRIDE // แพทย์ปรับเอง
+}
+
+enum AlertType {
+  CRITICAL_GLUCOSE_LOW  // น้ำตาลต่ำจัด
+  CRITICAL_GLUCOSE_HIGH // น้ำตาลสูงจัด
+  CRITICAL_BP           // ความดันวิกฤต
+  HIGH_RISK             // ความเสี่ยงสูง (ใช้เมื่อเปิดตัวเลือกให้แจ้งเตือน)
+  LOST_REMISSION        // หลุดจากภาวะสงบ (Phase 2)
+  MISSED_FOLLOWUP       // ขาดการบันทึก/เลยกำหนดตรวจ (Phase 2)
+}
+
+enum AlertStatus {
+  NEW          // ใหม่
+  ACKNOWLEDGED // รับทราบแล้ว
+  DONE         // ดำเนินการแล้ว
+  CANCELLED    // ยกเลิก (ค่าต้นเหตุถูกยกเลิก/แก้ไขจนไม่เข้าเกณฑ์)
+}
+
+enum LocationMethod {
+  MAP_PIN    // ปักหมุดบนแผนที่
+  DEVICE_GPS // ใช้ตำแหน่งปัจจุบันของอุปกรณ์
+  GEOCODE    // ค้นหาจากที่อยู่ (ปิดเป็นค่าเริ่มต้น)
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  CREATE
+  UPDATE
+  VOID
+  IMPORT_CSV
+  RISK_OVERRIDE
+  RULE_CHANGE
+  VIEW_LOCATION     // เปิดดูพิกัด
+  OPEN_NAVIGATION   // กดปุ่มนำทางไปบ้านผู้ป่วย
+  EXPORT
+}
+
+// =============================================================================
+// ผู้ใช้งาน
+// =============================================================================
+
+/// โปรไฟล์ผู้ใช้ ผูกกับ Supabase Auth (id = auth.users.id)
+model Profile {
+  id           String    @id @db.Uuid // ต้องเท่ากับ auth.users.id ของ Supabase
+  fullName     String
+  email        String    @unique
+  role         Role
+  phone        String?   // ใช้กับการแจ้งเตือน SMS (Phase 3)
+  receiveSms   Boolean   @default(false)
+  isActive     Boolean   @default(true)
+  lastActiveAt DateTime? // ใช้ตรวจ session หมดเวลา 30 นาทีฝั่ง server
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  patientsCreated        Patient[]         @relation("PatientCreatedBy")
+  locationsConsentBy     PatientLocation[] @relation("LocationConsentBy")
+  locationsUpdatedBy     PatientLocation[] @relation("LocationUpdatedBy")
+  glucoseCreated         GlucoseReading[]  @relation("GlucoseCreatedBy")
+  glucoseVoided          GlucoseReading[]  @relation("GlucoseVoidedBy")
+  labsCreated            LabRecord[]       @relation("LabCreatedBy")
+  labsVoided             LabRecord[]       @relation("LabVoidedBy")
+  ruleSetsCreated        RiskRuleSet[]     @relation("RuleSetCreatedBy")
+  assessmentsOverridden  RiskAssessment[]  @relation("AssessmentOverrideBy")
+  alertsAcknowledged     Alert[]           @relation("AlertAckBy")
+  alertsDone             Alert[]           @relation("AlertDoneBy")
+  importBatches          ImportBatch[]
+  auditLogs              AuditLog[]
+  settingsUpdated        AppSetting[]
+
+  @@map("profiles")
+}
+
+// =============================================================================
+// ผู้ป่วย
+// =============================================================================
+
+model Patient {
+  id                      String        @id @default(uuid()) @db.Uuid
+  hn                      String        @unique
+  nationalId              String?       @unique // ข้อมูลอ่อนไหว: พิจารณาเข้ารหัสที่ชั้นแอป
+  prefix                  String?
+  firstName               String
+  lastName                String
+  gender                  Gender?
+  birthDate               DateTime?     @db.Date
+  phone                   String?
+  address                 String?
+  emergencyContactName    String?
+  emergencyContactPhone   String?
+
+  diabetesType            DiabetesType  @default(UNKNOWN)
+  diagnosedAt             DateTime?     @db.Date // วันที่วินิจฉัยเบาหวาน
+  programStartDate        DateTime?     @db.Date // วันที่เริ่มโปรแกรม Remission
+  programStatus           ProgramStatus @default(IN_PROGRAM)
+  remissionStartedAt      DateTime?     @db.Date // วันที่เข้าสู่ภาวะสงบ (ถ้ามี)
+  notes                   String?
+
+  deletedAt               DateTime?     // soft delete
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  createdById             String?       @db.Uuid
+  createdBy               Profile?      @relation("PatientCreatedBy", fields: [createdById], references: [id])
+
+  location                PatientLocation?
+  medications             MedicationPeriod[]
+  glucoseReadings         GlucoseReading[]
+  labRecords              LabRecord[]
+  riskAssessments         RiskAssessment[]
+  alerts                  Alert[]
+
+  @@index([programStatus])
+  @@index([deletedAt])
+  @@index([lastName, firstName])
+  @@map("patients")
+}
+
+/// พิกัดบ้านผู้ป่วย (เห็นได้เฉพาะ Admin/แพทย์ ตรวจสิทธิ์ที่ฝั่ง server)
+/// สร้างได้ก็ต่อเมื่อมี consentGivenAt เท่านั้น
+model PatientLocation {
+  id                  String         @id @default(uuid()) @db.Uuid
+  patientId           String         @unique @db.Uuid
+  latitude            Float
+  longitude           Float
+  method              LocationMethod
+  addressNote         String?        // คำอธิบายจุดสังเกต/ที่อยู่ที่ปักหมุด
+
+  consentGivenAt      DateTime       // วันที่ผู้ป่วยให้ความยินยอม (บังคับ)
+  consentRecordedById String         @db.Uuid
+  consentRecordedBy   Profile        @relation("LocationConsentBy", fields: [consentRecordedById], references: [id])
+
+  updatedById         String         @db.Uuid
+  updatedBy           Profile        @relation("LocationUpdatedBy", fields: [updatedById], references: [id])
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  patient             Patient        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@map("patient_locations")
+}
+
+/// ช่วงเวลาที่ใช้ยา ใช้คำนวณ "หยุดยาเบาหวานอย่างน้อย 3 เดือน"
+model MedicationPeriod {
+  id               String    @id @default(uuid()) @db.Uuid
+  patientId        String    @db.Uuid
+  drugName         String
+  isDiabetesDrug   Boolean   @default(true) // นับเป็นยาเบาหวานในเงื่อนไข Remission หรือไม่
+  startDate        DateTime  @db.Date
+  endDate          DateTime? @db.Date // ว่าง = ยังใช้อยู่
+  note             String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  patient          Patient   @relation(fields: [patientId], references: [id], onDelete: Restrict)
+
+  @@index([patientId, startDate])
+  @@map("medication_periods")
+}
+
+// =============================================================================
+// ผลตรวจ
+// =============================================================================
+
+/// ค่าน้ำตาล DTX (เจาะปลายนิ้ว) 1 แถว = 1 ค่าที่วัด
+/// ผู้ป่วยวัดเองที่บ้าน เจ้าหน้าที่เป็นผู้กรอก จึงแยกวันที่วัดจริงกับวันที่บันทึก
+/// อนุญาตให้มีหลายค่าในช่วงเดียวกันของวันเดียวกัน (จึงไม่มี unique)
+model GlucoseReading {
+  id             String        @id @default(uuid()) @db.Uuid
+  patientId      String        @db.Uuid
+  measuredDate   DateTime      @db.Date // วันที่ผู้ป่วยวัดจริง (ใช้หา "วันล่าสุด")
+  measuredTime   String?       @db.VarChar(5) // เวลาที่วัด "HH:mm" (ไม่บังคับ)
+  period         GlucosePeriod
+  valueMgDl      Int?          // ว่างได้เมื่อเครื่องขึ้น LO/HI
+  meterFlag      MeterFlag     @default(NONE)
+  note           String?       // เช่น "วัดซ้ำเพราะค่าสูง"
+
+  source         DataSource    @default(MANUAL)
+  importBatchId  String?       @db.Uuid
+
+  createdAt      DateTime      @default(now()) // วันที่กรอกเข้าระบบ
+  createdById    String        @db.Uuid
+  updatedAt      DateTime      @updatedAt
+
+  // ยกเลิกรายการ (ไม่ลบจริง) เช่น กรอกผิดคนหรือผิดวัน
+  voidedAt       DateTime?
+  voidedById     String?       @db.Uuid
+  voidReason     String?
+
+  patient        Patient       @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  importBatch    ImportBatch?  @relation(fields: [importBatchId], references: [id])
+  createdBy      Profile       @relation("GlucoseCreatedBy", fields: [createdById], references: [id])
+  voidedBy       Profile?      @relation("GlucoseVoidedBy", fields: [voidedById], references: [id])
+
+  assessments    RiskAssessment[]
+  alerts         Alert[]
+
+  @@index([patientId, measuredDate])
+  @@index([importBatchId])
+  @@map("glucose_readings")
+}
+
+/// ผลตรวจตามนัด: HbA1c, น้ำหนัก, ส่วนสูง, BMI, ความดันโลหิต
+/// ทุกฟิลด์เป็น optional เพราะแต่ละครั้งอาจตรวจไม่ครบ
+model LabRecord {
+  id             String       @id @default(uuid()) @db.Uuid
+  patientId      String       @db.Uuid
+  recordedDate   DateTime     @db.Date // วันที่ตรวจ
+
+  hba1c          Float?       // %
+  weightKg       Float?
+  heightCm       Float?
+  bmi            Float?       // เก็บค่า ณ ตอนบันทึกเพื่อคงประวัติ (คำนวณซ้ำได้)
+  sbp            Int?         // ความดันตัวบน mmHg
+  dbp            Int?         // ความดันตัวล่าง mmHg
+  note           String?
+
+  source         DataSource   @default(MANUAL)
+  importBatchId  String?      @db.Uuid
+
+  createdAt      DateTime     @default(now())
+  createdById    String       @db.Uuid
+  updatedAt      DateTime     @updatedAt
+
+  voidedAt       DateTime?
+  voidedById     String?      @db.Uuid
+  voidReason     String?
+
+  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  importBatch    ImportBatch? @relation(fields: [importBatchId], references: [id])
+  createdBy      Profile      @relation("LabCreatedBy", fields: [createdById], references: [id])
+  voidedBy       Profile?     @relation("LabVoidedBy", fields: [voidedById], references: [id])
+
+  assessments    RiskAssessment[]
+  alerts         Alert[]
+
+  @@index([patientId, recordedDate])
+  @@index([importBatchId])
+  @@map("lab_records")
+}
+
+// =============================================================================
+// เกณฑ์และการประเมินความเสี่ยง
+// =============================================================================
+
+/// ชุดเกณฑ์หนึ่ง version ใช้ร่วมกันทุกช่วงเวลาอาหาร
+/// ทุกการแก้ไขสร้างแถวใหม่ (version ใหม่) ห้ามแก้แถวเดิม เพื่อย้อนดูได้ว่าผลเก่าใช้เกณฑ์ใด
+/// ค่า null = แพทย์ยังไม่กำหนด (ระบบจะข้ามระดับนั้นและแสดงแถบเตือนในหน้าตั้งค่า)
+/// แก้ได้โดย Admin และแพทย์
+model RiskRuleSet {
+  id        String   @id @default(uuid()) @db.Uuid
+  version   Int      @unique
+  isActive  Boolean  @default(false) // ใช้งานได้ครั้งละ 1 ชุด (บังคับที่ชั้นแอป)
+
+  // ควบคุมได้ดี: ค่าน้ำตาลอยู่ในช่วงนี้ (mg/dL)
+  goodMin   Int      @default(80)
+  goodMax   Int      @default(140)
+  // นอกช่วงข้างต้น แต่ไม่เข้าเกณฑ์ที่หนักกว่า = "ยังคุมไม่ได้"
+
+  // เกณฑ์ที่แพทย์เป็นผู้กำหนด: "ต่ำกว่า" / "สูงกว่า" ค่านี้ถือว่าเข้าระดับนั้น
+  watchBelow          Int?
+  watchAbove          Int?
+  highBelow           Int?
+  highAbove           Int?
+  criticalGlucoseBelow Int? // น้ำตาลต่ำจัด
+  criticalGlucoseAbove Int? // น้ำตาลสูงจัด
+
+  // ความดันวิกฤต: SBP >= ค่านี้ หรือ DBP >= ค่านี้
+  criticalSbp Int      @default(180)
+  criticalDbp Int      @default(120)
+
+  // เกณฑ์ Remission
+  remissionHba1cMax     Float @default(6.5) // HbA1c <= ค่านี้
+  remissionMedFreeDays  Int   @default(90)  // หยุดยาเบาหวานอย่างน้อยกี่วัน
+
+  // ข้อมูลเก่า: ถ้าวันที่วัดล่าสุดเก่ากว่านี้ ให้แสดงป้ายเตือนข้างระดับความเสี่ยง
+  staleDataDays Int    @default(7)
+
+  // ส่ง Alert ระดับ "ความเสี่ยงสูง" ด้วยหรือไม่ (Phase 1 = เฉพาะวิกฤต)
+  alertOnHighRisk Boolean @default(false)
+
+  changeReason String?   // เหตุผลที่แก้เกณฑ์ (บังคับที่ชั้นแอป)
+  createdAt    DateTime  @default(now())
+  createdById  String    @db.Uuid
+  createdBy    Profile   @relation("RuleSetCreatedBy", fields: [createdById], references: [id])
+
+  assessments  RiskAssessment[]
+
+  @@map("risk_rule_sets")
+}
+
+/// ผลการประเมินความเสี่ยง เก็บเป็นประวัติ ไม่เขียนทับ
+/// ระดับปัจจุบันของผู้ป่วย = แถวล่าสุด (createdAt) ของผู้ป่วยคนนั้น
+/// - AUTO: ค่าที่แย่ที่สุดของน้ำตาลวันที่วัดล่าสุด รวมกับความดันล่าสุด
+/// - OVERRIDE: แพทย์ปรับ มีผลจนกว่าจะมีผลตรวจใหม่ (แล้วระบบสร้าง AUTO ใหม่)
+///   การยกเลิก Override = สร้าง AUTO ใหม่
+model RiskAssessment {
+  id           String           @id @default(uuid()) @db.Uuid
+  patientId    String           @db.Uuid
+  level        RiskLevel
+  source       AssessmentSource @default(AUTO)
+  autoLevel    RiskLevel?       // ระดับที่ระบบคำนวณได้ (ไว้เทียบเมื่อเป็น OVERRIDE)
+  reasons      Json?            // เหตุผล เช่น [{metric, value, rule}] ใช้แสดง "ทำไมได้ระดับนี้"
+  ruleSetId    String           @db.Uuid
+
+  // ต้นเหตุที่ทำให้ประเมินใหม่ (อย่างใดอย่างหนึ่ง)
+  triggerGlucoseId String?      @db.Uuid
+  triggerLabId     String?      @db.Uuid
+
+  overrideReason String?
+  overrideById   String?        @db.Uuid
+  createdAt      DateTime       @default(now())
+
+  patient        Patient        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  ruleSet        RiskRuleSet    @relation(fields: [ruleSetId], references: [id])
+  triggerGlucose GlucoseReading? @relation(fields: [triggerGlucoseId], references: [id])
+  triggerLab     LabRecord?     @relation(fields: [triggerLabId], references: [id])
+  overrideBy     Profile?       @relation("AssessmentOverrideBy", fields: [overrideById], references: [id])
+
+  @@index([patientId, createdAt(sort: Desc)])
+  @@index([level])
+  @@map("risk_assessments")
+}
+
+// =============================================================================
+// Alert
+// =============================================================================
+
+model Alert {
+  id            String      @id @default(uuid()) @db.Uuid
+  patientId     String      @db.Uuid
+  type          AlertType
+  level         RiskLevel
+  status        AlertStatus @default(NEW)
+
+  // ต้นเหตุ (อย่างใดอย่างหนึ่ง)
+  glucoseReadingId String?  @db.Uuid
+  labRecordId      String?  @db.Uuid
+
+  // วันที่วัด/ตรวจจริง: แสดงคู่กับ createdAt เพื่อบอกว่าเป็นค่าย้อนหลังกี่วัน
+  eventDate     DateTime    @db.Date
+  summary       String      // ข้อความสั้น เช่น "น้ำตาลหลังอาหารเย็นเกินเกณฑ์วิกฤต"
+
+  // กันสร้าง Alert ซ้ำจากต้นเหตุเดียวกัน เช่น "CRITICAL_BP:<labRecordId>"
+  dedupeKey     String      @unique
+
+  createdAt     DateTime    @default(now())
+  ackById       String?     @db.Uuid
+  ackAt         DateTime?
+  doneById      String?     @db.Uuid
+  doneAt        DateTime?
+  doneNote      String?     // บันทึกการดำเนินการ
+
+  patient         Patient         @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  glucoseReading  GlucoseReading? @relation(fields: [glucoseReadingId], references: [id])
+  labRecord       LabRecord?      @relation(fields: [labRecordId], references: [id])
+  ackBy           Profile?        @relation("AlertAckBy", fields: [ackById], references: [id])
+  doneBy          Profile?        @relation("AlertDoneBy", fields: [doneById], references: [id])
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([patientId, createdAt(sort: Desc)])
+  @@map("alerts")
+}
+
+// =============================================================================
+// นำเข้า CSV / Audit / ตั้งค่า
+// =============================================================================
+
+/// ประวัติการนำเข้า CSV แต่ละครั้ง (ไม่เก็บไฟล์ต้นฉบับ เพราะมีข้อมูลสุขภาพ)
+model ImportBatch {
+  id            String   @id @default(uuid()) @db.Uuid
+  fileName      String
+  totalRows     Int
+  successRows   Int
+  failedRows    Int
+  errorReport   Json?    // รายละเอียดแถวที่ไม่ผ่าน ใช้สร้างไฟล์รายงานให้ดาวน์โหลด
+  importedById  String   @db.Uuid
+  createdAt     DateTime @default(now())
+
+  importedBy       Profile          @relation(fields: [importedById], references: [id])
+  glucoseReadings  GlucoseReading[]
+  labRecords       LabRecord[]
+
+  @@map("import_batches")
+}
+
+/// บันทึกการเข้าถึง/แก้ไข รวมถึงการเปิดดูพิกัดและกดปุ่มนำทาง (ไม่ลบ ไม่แก้)
+model AuditLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  userId     String?     @db.Uuid
+  action     AuditAction
+  entity     String      // ชื่อตาราง/ประเภทข้อมูล เช่น "glucose_reading"
+  entityId   String?
+  patientId  String?     @db.Uuid // ไว้กรองประวัติรายผู้ป่วย (ไม่ผูก FK เพื่อไม่กระทบ audit)
+  before     Json?       // ค่าเดิม
+  after      Json?       // ค่าใหม่
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
+
+  user       Profile?    @relation(fields: [userId], references: [id])
+
+  @@index([patientId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}
+
+/// ค่าตั้งระบบแบบ key/value เช่น
+/// - "geocodeSearchEnabled" = false (ค้นหาที่อยู่ ปิดเป็นค่าเริ่มต้น)
+/// - "mapTileUrl" = URL ไทล์แผนที่ (เปลี่ยนแหล่งไทล์ได้จุดเดียว)
+model AppSetting {
+  key          String   @id
+  value        Json
+  updatedAt    DateTime @updatedAt
+  updatedById  String?  @db.Uuid
+  updatedBy    Profile? @relation(fields: [updatedById], references: [id])
+
+  @@map("app_settings")
+}
