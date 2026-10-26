@@ -56,7 +56,7 @@ export default function AppShell({
   return (
     <div className="min-h-dvh bg-slate-50 text-slate-900">
       {/* รางไอคอน 80 px: 1024–1439 */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-20 lg:block min-[1440px]:hidden">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-20 lg:max-[1439px]:block">
         <Sidebar variant="rail" user={user} alertCount={alertCount} />
       </aside>
       {/* เมนูเต็ม 256 px: 1440 ขึ้นไป */}
@@ -64,7 +64,7 @@ export default function AppShell({
         <Sidebar variant="full" user={user} alertCount={alertCount} />
       </aside>
 
-      <div className="lg:pl-20 min-[1440px]:pl-64">
+      <div className="lg:max-[1439px]:pl-20 min-[1440px]:pl-64">
         {/* แถบบนบางของแท็บเล็ต (768–1023) */}
         <header className="sticky top-0 z-20 hidden items-center gap-2 border-b border-slate-200 bg-white px-3 py-2 md:flex lg:hidden">
           <button
@@ -105,9 +105,8 @@ export default function AppShell({
               key={item.href}
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs ${FOCUS} ${
-                active ? "font-semibold text-teal-800" : "text-slate-500"
-              }`}
+              className={`flex min-h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs ${FOCUS} ${active ? "font-semibold text-teal-800" : "text-slate-500"
+                }`}
             >
               <span className="relative">
                 <Icon name={item.icon} size={24} />

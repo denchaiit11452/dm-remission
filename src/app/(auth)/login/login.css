@@ -1,0 +1,862 @@
+/* ========================================================================
+   DM Remission DCPH — Visual Brand Direction (Login Page)
+   Figma Design Spec:
+   - Primary: #0B5ED7
+   - Secondary: #00BFA6
+   - Accent: #E3F2FD
+   - Neutral: #F5F7FA
+   - Text: #1F2937
+   - Font: Prompt (Weights: 300, 400, 500, 600, 700)
+   ======================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --lp-primary: #0B5ED7;
+  --lp-primary-hover: #094db2;
+  --lp-primary-active: #083e91;
+  --lp-secondary: #00BFA6;
+  --lp-secondary-light: #E6F8F5;
+  --lp-accent: #E3F2FD;
+  --lp-neutral: #F5F7FA;
+  --lp-text: #1F2937;
+  --lp-text-muted: #6B7280;
+  --lp-text-subtle: #9CA3AF;
+  --lp-border: #E2E8F0;
+  --lp-footer-bg: #0A2540;
+}
+
+/* Force Prompt font across all login elements */
+.lp-root,
+.lp-root *,
+.lp-root input,
+.lp-root button,
+.lp-root select,
+.lp-root textarea {
+  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* ── Container Layout ─────────────────────────────────────────────────── */
+.lp-root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #F4F7FB;
+  color: var(--lp-text);
+  position: relative;
+  overflow-x: hidden;
+}
+
+@media (min-width: 1025px) {
+  .lp-root {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+/* ── Main Viewport Area ───────────────────────────────────────────────── */
+.lp-main {
+  flex: 1;
+  display: flex;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+  .lp-main {
+    flex-direction: column;
+    overflow-y: auto;
+    min-height: calc(100dvh - 64px);
+  }
+}
+
+/* ── Left Hero Section (Medical Photo + Brand Graphics) ───────────────── */
+.lp-hero-section {
+  flex: 1.28;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 2.75rem 3.5rem 2.5rem 3.75rem;
+  overflow: hidden;
+  background: linear-gradient(135deg, #F0F6FC 0%, #E8F2FA 50%, #E0EEF8 100%);
+}
+
+@media (max-width: 1024px) {
+  .lp-hero-section {
+    display: none;
+  }
+}
+
+/* Photo Background in Hero */
+.lp-hero-bg-container {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.lp-hero-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 18%;
+  filter: contrast(1.02) brightness(1.03);
+  opacity: 0.94;
+}
+
+/* Gradient overlays */
+.lp-hero-overlay-top {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.94) 0%,
+    rgba(255, 255, 255, 0.8) 22%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(11, 94, 215, 0.22) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.lp-hero-overlay-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 32%;
+  background: linear-gradient(90deg, rgba(244, 247, 251, 0) 0%, rgba(244, 247, 251, 0.75) 60%, #F4F7FB 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* ── Hero Top Brand Area ──────────────────────────────────────────────── */
+.lp-hero-top {
+  position: relative;
+  z-index: 5;
+  animation: lp-fade-down 0.8s ease-out both;
+}
+
+.lp-hero-title-group {
+  margin-bottom: 0.5rem;
+}
+
+.lp-hero-title {
+  font-size: 2.65rem;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #0A2540;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.lp-hero-title-teal {
+  color: var(--lp-secondary);
+  font-weight: 800;
+}
+
+.lp-hero-subtitle {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #1F2937;
+  margin: 0.35rem 0 1rem 0;
+  letter-spacing: -0.01em;
+}
+
+/* Badge: ระบบติดตามผู้ป่วยเบาหวานในโปรแกรม Remission */
+.lp-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.95rem 0.4rem 0.85rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 191, 166, 0.35);
+  border-radius: 9999px;
+  color: #008775;
+  font-size: 0.84rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 191, 166, 0.1);
+}
+
+.lp-hero-badge-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: var(--lp-secondary);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+/* ── Floating Medical Icon Badges ─────────────────────────────────────── */
+.lp-floating-badge {
+  position: absolute;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 8px 20px rgba(11, 94, 215, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04);
+  border: 2px solid #fff;
+  pointer-events: none;
+}
+
+.lp-floating-badge--drop {
+  bottom: 24%;
+  left: 36%;
+  animation: lp-float 6s ease-in-out infinite;
+  background: linear-gradient(135deg, #ffffff 40%, #E3F2FD 100%);
+  color: var(--lp-primary);
+}
+
+.lp-floating-badge--chart {
+  bottom: 13%;
+  left: 28%;
+  animation: lp-float 7s 1.5s ease-in-out infinite;
+  background: linear-gradient(135deg, #ffffff 40%, #E6F8F5 100%);
+  color: var(--lp-secondary);
+}
+
+.lp-floating-badge--heart {
+  bottom: 19%;
+  left: 47%;
+  animation: lp-float 8s 3s ease-in-out infinite;
+  background: linear-gradient(135deg, #ffffff 40%, #E3F2FD 100%);
+  color: var(--lp-primary);
+}
+
+@keyframes lp-float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(2deg);
+  }
+}
+
+/* ── Hero Bottom Wave Graphic & Slogan ────────────────────────────────── */
+.lp-hero-wave-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  z-index: 4;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.lp-hero-wave-svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lp-hero-bottom-slogan {
+  position: relative;
+  z-index: 7;
+  padding-left: 0.25rem;
+  margin-top: auto;
+  animation: lp-fade-up 0.8s 0.2s ease-out both;
+}
+
+.lp-hero-slogan-text {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 30, 70, 0.45);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.lp-hero-slogan-sub {
+  font-size: 1.05rem;
+  font-weight: 400;
+  opacity: 0.95;
+}
+
+/* ── Right Section (Login Card Container) ─────────────────────────────── */
+.lp-form-section {
+  flex: 0.95;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem 2.5rem;
+  position: relative;
+  z-index: 10;
+  background: transparent;
+}
+
+@media (max-width: 1024px) {
+  .lp-form-section {
+    padding: 2.5rem 1.25rem;
+    background: linear-gradient(160deg, #EFF6FF 0%, #F5F7FA 100%);
+  }
+}
+
+/* ── Login Card (White Floating Card) ─────────────────────────────────── */
+.lp-card {
+  width: 100%;
+  max-width: 430px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 45px -12px rgba(11, 94, 215, 0.12),
+              0 4px 16px rgba(0, 0, 0, 0.04),
+              0 0 1px 1px rgba(227, 242, 253, 0.8);
+  padding: 2.15rem 2.15rem 2rem;
+  position: relative;
+  animation: lp-card-enter 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (max-width: 480px) {
+  .lp-card {
+    padding: 1.75rem 1.35rem 1.5rem;
+    border-radius: 16px;
+  }
+}
+
+@keyframes lp-card-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Card Header / Logo ───────────────────────────────────────────────── */
+.lp-card-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.lp-card-logo-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.lp-card-logo-img {
+  width: auto;
+  height: 104px;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.08));
+}
+
+.lp-card-brand-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #0A2540;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.01em;
+}
+
+.lp-card-brand-title span {
+  color: var(--lp-secondary);
+}
+
+.lp-card-brand-subtitle {
+  font-size: 0.785rem;
+  color: var(--lp-text-muted);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* ── Card Form Intro (เข้าสู่ระบบ) ───────────────────────────────────── */
+.lp-card-intro {
+  margin-bottom: 1.15rem;
+  text-align: left;
+}
+
+.lp-card-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--lp-text);
+  margin: 0 0 0.2rem;
+  letter-spacing: -0.01em;
+}
+
+.lp-card-desc {
+  font-size: 0.8rem;
+  color: var(--lp-text-muted);
+  margin: 0;
+}
+
+/* ── Notice / Alert ───────────────────────────────────────────────────── */
+.lp-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  margin-bottom: 1.15rem;
+  animation: lp-shake 0.4s ease-out;
+}
+
+.lp-alert--warning {
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+
+.lp-alert--error {
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #991B1B;
+}
+
+.lp-alert-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Lockout banner with countdown timer */
+.lp-lockout-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: #FFF1F2;
+  border: 1.5px solid #FECDD3;
+  border-radius: 12px;
+}
+
+.lp-lockout-icon {
+  flex-shrink: 0;
+  color: #E11D48;
+  margin-top: 2px;
+  animation: lp-spin 6s linear infinite;
+}
+
+.lp-lockout-content {
+  flex: 1;
+}
+
+.lp-lockout-title {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #9F1239;
+  margin-bottom: 2px;
+}
+
+.lp-lockout-desc {
+  font-size: 0.78rem;
+  color: #BE123C;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.lp-lockout-timer {
+  font-size: 0.84rem;
+  color: #881337;
+}
+
+.lp-lockout-timer strong {
+  font-weight: 700;
+  color: #E11D48;
+  letter-spacing: 0.02em;
+}
+
+@keyframes lp-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+
+/* ── Form Inputs ──────────────────────────────────────────────────────── */
+.lp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.lp-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.lp-field-icon {
+  position: absolute;
+  left: 14px;
+  color: #9CA3AF;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.lp-field:focus-within .lp-field-icon {
+  color: var(--lp-primary);
+}
+
+.lp-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 16px 0 44px;
+  border: 1.5px solid var(--lp-border);
+  border-radius: 10px;
+  background: #ffffff;
+  font-size: 0.925rem;
+  color: var(--lp-text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.lp-input::placeholder {
+  color: #9CA3AF;
+  font-weight: 400;
+}
+
+.lp-input:hover:not(:disabled) {
+  border-color: #CBD5E1;
+}
+
+.lp-input:focus {
+  border-color: var(--lp-primary);
+  box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.14);
+}
+
+.lp-input:disabled {
+  background: #F8FAFC;
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
+.lp-input--password {
+  padding-right: 44px;
+}
+
+.lp-password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: #9CA3AF;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.lp-password-toggle:hover {
+  color: var(--lp-text);
+  background: #F3F4F6;
+}
+
+/* ── Remember Me Option ───────────────────────────────────────────────── */
+.lp-form-options {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: -0.15rem;
+}
+
+.lp-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.835rem;
+  color: #4B5563;
+  cursor: pointer;
+  user-select: none;
+}
+
+.lp-checkbox {
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  border: 1.5px solid #CBD5E1;
+  accent-color: var(--lp-primary);
+  cursor: pointer;
+}
+
+/* ── Submit Button ────────────────────────────────────────────────────── */
+.lp-btn-submit {
+  width: 100%;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 9px;
+  background: var(--lp-primary);
+  color: #ffffff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(11, 94, 215, 0.25);
+  transition: background-color 0.2s, transform 0.15s, box-shadow 0.2s;
+  margin-top: 0.25rem;
+}
+
+.lp-btn-submit:hover:not(:disabled) {
+  background: var(--lp-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(11, 94, 215, 0.32);
+}
+
+.lp-btn-submit:active:not(:disabled) {
+  background: var(--lp-primary-active);
+  transform: translateY(0);
+}
+
+.lp-btn-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.lp-btn-arrow {
+  transition: transform 0.2s ease;
+}
+
+.lp-btn-submit:hover:not(:disabled) .lp-btn-arrow {
+  transform: translateX(3px);
+}
+
+/* ── Forgot Password Link ─────────────────────────────────────────────── */
+.lp-forgot-link-wrap {
+  text-align: center;
+  margin-top: -0.25rem;
+}
+
+.lp-forgot-link {
+  font-size: 0.8125rem;
+  color: #4B5563;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s, background-color 0.15s;
+}
+
+.lp-forgot-link:hover {
+  color: var(--lp-primary);
+  background-color: #F0F7FF;
+}
+
+/* ── PDPA Box ─────────────────────────────────────────────────────────── */
+.lp-pdpa-box {
+  margin-top: 1.25rem;
+  padding: 0.7rem 0.95rem;
+  border-radius: 10px;
+  background: #F0F7FF;
+  border: 1px solid #D8EAFE;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.lp-pdpa-icon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #E1EFFE;
+  color: var(--lp-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lp-pdpa-text {
+  font-size: 0.725rem;
+  line-height: 1.4;
+  color: #2563EB;
+  margin: 0;
+  font-weight: 400;
+}
+
+/* ── Forgot Password Dialog / Modal ───────────────────────────────────── */
+.lp-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 37, 64, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: lp-fade-in 0.2s ease-out;
+}
+
+.lp-modal {
+  width: 100%;
+  max-width: 400px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  padding: 1.75rem;
+  text-align: center;
+  animation: lp-card-enter 0.25s ease-out;
+}
+
+.lp-modal-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #EBF5FF;
+  color: var(--lp-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.85rem;
+}
+
+.lp-modal-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--lp-text);
+  margin: 0 0 0.5rem;
+}
+
+.lp-modal-desc {
+  font-size: 0.875rem;
+  color: var(--lp-text-muted);
+  line-height: 1.6;
+  margin: 0 0 1.25rem;
+}
+
+.lp-modal-btn {
+  width: 100%;
+  height: 42px;
+  border-radius: 8px;
+  background: var(--lp-primary);
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.lp-modal-btn:hover {
+  background: var(--lp-primary-hover);
+}
+
+/* ── Bottom Dark Status / Brand Bar ───────────────────────────────────── */
+.lp-footer-bar {
+  background: var(--lp-footer-bg);
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 2.5rem;
+  font-size: 0.775rem;
+  color: rgba(255, 255, 255, 0.75);
+  z-index: 20;
+  position: relative;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .lp-footer-bar {
+    padding: 0.65rem 1rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    text-align: center;
+  }
+}
+
+.lp-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.lp-footer-drop {
+  color: var(--lp-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.lp-footer-brand-name {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.lp-footer-sep {
+  opacity: 0.4;
+}
+
+.lp-footer-right {
+  font-size: 0.725rem;
+  opacity: 0.65;
+}
+
+/* ── Keyframes ────────────────────────────────────────────────────────── */
+@keyframes lp-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes lp-fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes lp-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lp-spinner {
+  animation: lp-spin 0.75s linear infinite;
+}
+
+@keyframes lp-spin {
+  to { transform: rotate(360deg); }
+}
