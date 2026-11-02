@@ -1,5 +1,6 @@
 import AppShell from "@/components/shell/AppShell";
 import IdleLogout from "@/components/IdleLogout";
+import CriticalAlertWatcher from "@/components/alerts/CriticalAlertWatcher";
 import { ROLE_LABELS, requireUser } from "@/lib/auth/session";
 import ServiceUnavailableScreen from "@/components/system/ServiceUnavailableScreen";
 import { countNewAlerts } from "@/lib/data/alerts";
@@ -28,6 +29,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       >
         {children}
       </AppShell>
+      <CriticalAlertWatcher />
       <IdleLogout />
     </>
   );
