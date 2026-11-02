@@ -9,6 +9,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-dm_remission}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      # ผูกไว้เฉพาะ localhost พอร์ต 5433 เพื่อไม่ให้ชนกับ 5432 เดิมของเครื่อง
+      - "127.0.0.1:5433:5432"
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-dm_remission}" ]
       interval: 5s
