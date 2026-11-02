@@ -1,0 +1,30 @@
+/* การเคลื่อนไหวของ Alert Center: แถวหุบ 200 ms, Toast เข้า 300 ms, กล่องยืนยันออก 150 ms (ตามสเปก A9)
+   ใช้เฉพาะ transform / opacity / grid-template-rows  เนื้อหามองเห็นได้ตั้งแต่สถานะเริ่มต้น */
+:root { --ac-ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ac-ease-in: cubic-bezier(0.4, 0, 1, 1); }
+
+.ac-li { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 200ms var(--ac-ease-out), opacity 200ms linear; }
+.ac-li[data-leaving="true"] { grid-template-rows: 0fr; opacity: 0; }
+.ac-li > .ac-inner { min-height: 0; overflow: hidden; }
+
+@keyframes ac-toast-in { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ac-dialog-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(8px); } }
+@keyframes ac-sheet-out { from { transform: translateY(0); } to { transform: translateY(100%); } }
+@keyframes ac-spin { to { transform: rotate(360deg); } }
+@keyframes ac-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ac-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+.ac-toast { animation: ac-toast-in 300ms var(--ac-ease-out) both; }
+.ac-dialog[data-state="exit"] { animation: ac-dialog-out 150ms var(--ac-ease-in) both; }
+.ac-spinner { animation: ac-spin 800ms linear infinite; }
+.ac-btn { transition: transform 100ms var(--ac-ease-out), background-color 150ms linear; }
+.ac-btn:active:not(:disabled) { transform: scale(0.98); }
+
+@media (max-width: 639px) { .ac-dialog[data-state="exit"] { animation: ac-sheet-out 200ms var(--ac-ease-in) both; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .ac-li { transition: none; }
+  .ac-toast { animation: ac-fade-in 150ms linear both; }
+  .ac-dialog[data-state="exit"] { animation: ac-fade-out 100ms linear both; }
+  .ac-spinner { animation: none; }
+  .ac-btn:active:not(:disabled) { transform: none; }
+}
