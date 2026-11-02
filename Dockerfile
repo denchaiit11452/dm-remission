@@ -31,15 +31,14 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Install prisma CLI for running migrations at startup
+RUN npm install -g prisma@6.19.3
+
 # Copy built standalone app and static files
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy Prisma schema and migrations + prisma cli for runtime migrations
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
@@ -49,4 +48,3 @@ USER nextjs
 EXPOSE 3000
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
-
