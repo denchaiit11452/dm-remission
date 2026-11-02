@@ -58,6 +58,11 @@ function Spinner() {
   );
 }
 
+function secondsUntil(lockedUntil: number | null): number {
+  if (!lockedUntil) return 0;
+  return Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000));
+}
+
 type LoginFormProps = {
   initialLockout?: {
     isLocked: boolean;
@@ -74,38 +79,24 @@ export default function LoginForm({ initialLockout }: LoginFormProps) {
   const effectiveLockedUntil = state.lockedUntil ?? initialLockout?.lockedUntil ?? null;
 
   // Remaining seconds calculated from client Date.now() vs lockedUntil timestamp
-  const [remainingSeconds, setRemainingSeconds] = useState<number>(() => {
-    if (effectiveLockedUntil) {
-      return Math.max(0, Math.ceil((effectiveLockedUntil - Date.now()) / 1000));
-    }
-    return 0;
-  });
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(() => secondsUntil(effectiveLockedUntil));
 
-  // Keep remainingSeconds in sync whenever effectiveLockedUntil changes
+  // Real-time countdown timer: restarts whenever the lockout target changes
   useEffect(() => {
-    if (effectiveLockedUntil) {
-      const diff = Math.max(0, Math.ceil((effectiveLockedUntil - Date.now()) / 1000));
-      setRemainingSeconds(diff);
-    } else {
-      setRemainingSeconds(0);
-    }
+    const syncRemainingSeconds = () => {
+      const remaining = secondsUntil(effectiveLockedUntil);
+      setRemainingSeconds(remaining);
+      if (remaining <= 0) clearInterval(timer);
+    };
+
+    const firstSync = setTimeout(syncRemainingSeconds, 0);
+    const timer = setInterval(syncRemainingSeconds, 1000);
+
+    return () => {
+      clearTimeout(firstSync);
+      clearInterval(timer);
+    };
   }, [effectiveLockedUntil]);
-
-  // Real-time countdown timer
-  useEffect(() => {
-    if (remainingSeconds <= 0) return;
-
-    const timer = setInterval(() => {
-      if (effectiveLockedUntil) {
-        const diff = Math.max(0, Math.ceil((effectiveLockedUntil - Date.now()) / 1000));
-        setRemainingSeconds(diff);
-      } else {
-        setRemainingSeconds((prev) => Math.max(0, prev - 1));
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [remainingSeconds, effectiveLockedUntil]);
 
   const isLocked = (state.isLocked || (initialLockout?.isLocked ?? false)) && remainingSeconds > 0;
 

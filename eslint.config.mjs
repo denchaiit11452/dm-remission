@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // สคริปต์ของเครื่องมือ AI ไม่ใช่โค้ดของระบบ
+    ".agent/**",
+    ".claude/**",
+    ".cursor/**",
+    ".gemini/**",
+    ".impeccable/**",
   ]),
 ]);
 

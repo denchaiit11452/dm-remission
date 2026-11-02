@@ -5,7 +5,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_password_change_me}
+      # ไม่มีรหัสผ่านสำรอง: ต้องสั่ง docker compose --env-file .env.production ... เสมอ (ดู README.md)
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?ต้องตั้ง POSTGRES_PASSWORD โดยสั่ง docker compose --env-file .env.production}
       POSTGRES_DB: ${POSTGRES_DB:-dm_remission}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -31,8 +32,8 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_password_change_me}@postgres:5432/${POSTGRES_DB:-dm_remission}?schema=public
-      DIRECT_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_password_change_me}@postgres:5432/${POSTGRES_DB:-dm_remission}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?ต้องตั้ง POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dm_remission}?schema=public
+      DIRECT_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?ต้องตั้ง POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dm_remission}?schema=public
     env_file:
       - path: .env.local
         required: false

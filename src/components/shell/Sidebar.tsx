@@ -77,6 +77,26 @@ function RailItem({ item, active, alertCount, onNavigate }: { item: NavItem; act
   );
 }
 
+function FullItemGroup({ label, items, pathname, alertCount, onNavigate }: {
+  label: string;
+  items: NavItem[];
+  pathname: string;
+  alertCount: number;
+  onNavigate?: () => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-2">
+      <p className="px-3 pb-1.5 pt-2 text-[11px] font-semibold text-[#8FB8B3]">{label}</p>
+      <div className="flex flex-col gap-1">
+        {items.map((item) => (
+          <FullItem key={item.key} item={item} active={isActivePath(pathname, item.href)} alertCount={alertCount} onNavigate={onNavigate} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Sidebar({ variant, user, alertCount, onNavigate }: Props) {
   const pathname = usePathname();
   const { main, restricted } = visibleItems(user.role);
@@ -117,18 +137,6 @@ export default function Sidebar({ variant, user, alertCount, onNavigate }: Props
     );
   }
 
-  const Group = ({ label, items }: { label: string; items: NavItem[] }) =>
-    items.length === 0 ? null : (
-      <div className="mt-2">
-        <p className="px-3 pb-1.5 pt-2 text-[11px] font-semibold text-[#8FB8B3]">{label}</p>
-        <div className="flex flex-col gap-1">
-          {items.map((item) => (
-            <FullItem key={item.key} item={item} active={isActivePath(pathname, item.href)} alertCount={alertCount} onNavigate={onNavigate} />
-          ))}
-        </div>
-      </div>
-    );
-
   return (
     <div className="flex h-full flex-col bg-[#0B2F2D] px-4 pb-5 pt-[22px] text-[#CFE6E3]">
       <div className="flex items-center gap-3 px-1 pb-4">
@@ -142,8 +150,8 @@ export default function Sidebar({ variant, user, alertCount, onNavigate }: Props
       </div>
 
       <nav aria-label="เมนูหลัก">
-        <Group label="เมนูหลัก" items={main} />
-        <Group label="สำหรับแพทย์และผู้ดูแลระบบ" items={restricted} />
+        <FullItemGroup label="เมนูหลัก" items={main} pathname={pathname} alertCount={alertCount} onNavigate={onNavigate} />
+        <FullItemGroup label="สำหรับแพทย์และผู้ดูแลระบบ" items={restricted} pathname={pathname} alertCount={alertCount} onNavigate={onNavigate} />
       </nav>
 
       <div className="mt-auto flex flex-col gap-3">

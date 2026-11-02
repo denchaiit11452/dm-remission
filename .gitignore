@@ -34,6 +34,7 @@ yarn-error.log*
 .env*
 .end.local
 !.env.example
+!.env.production.example
 
 # local tool config & AI agent files
 .impeccable/

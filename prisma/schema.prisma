@@ -1,11 +1,11 @@
 // =============================================================================
 // ระบบติดตามผู้ป่วย DM Remission (เบาหวานระยะสงบ)
-// Stack: Next.js + Prisma + Supabase (PostgreSQL)
+// Stack: Next.js + Prisma + PostgreSQL ของโรงพยาบาล (Supabase ใช้เฉพาะ Auth)
 //
 // หมายเหตุสำคัญ
 // - ร่างนี้เขียนตามรูปแบบ Prisma 5/6 (url / directUrl อยู่ใน datasource)
 //   ถ้าใช้ Prisma 7 ให้ย้าย url ไปไว้ใน prisma.config.ts และปรับ generator ตามเอกสาร
-// - Prisma เชื่อมฐานข้อมูลโดยตรงและข้าม Row Level Security ของ Supabase
+// - Prisma เชื่อมฐานข้อมูลโดยตรง ไม่มี Row Level Security คุ้มกัน
 //   การตรวจสิทธิ์ (โดยเฉพาะพิกัดผู้ป่วย) ต้องทำที่ชั้น server (src/lib/data/*) เสมอ
 // - ไม่มีการลบข้อมูลถาวร: ผู้ป่วยใช้ deletedAt, ผลตรวจใช้ voidedAt, audit ไม่ลบ
 // - เกณฑ์ทางคลินิกทั้งหมดอยู่ในตาราง risk_rule_sets (ไม่ฝังในโปรแกรม)
@@ -17,7 +17,7 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL") // connection pooling (Supabase pooler)
+  url       = env("DATABASE_URL") // ใช้ตอนแอปทำงาน
   directUrl = env("DIRECT_URL")   // ใช้ตอนรัน migrate
 }
 
