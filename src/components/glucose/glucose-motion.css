@@ -1,0 +1,44 @@
+/* การเคลื่อนไหวหลังกดบันทึกค่าน้ำตาล (ตาม SAVE-MOTION.md)
+   ใช้เฉพาะ transform / opacity / สี  เนื้อหามองเห็นได้ตั้งแต่สถานะเริ่มต้น */
+:root {
+  --dur-press: 100ms;
+  --dur-state: 150ms;
+  --dur-enter: 300ms;
+  --dur-exit: 150ms;
+  --dur-check: 250ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes toast-in { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes dialog-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(8px); } }
+@keyframes sheet-out { from { transform: translateY(0); } to { transform: translateY(100%); } }
+@keyframes check-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes highlight-fade { 0%, 67% { background-color: var(--highlight, #ccfbf1); } 100% { background-color: transparent; } }
+@keyframes chip-fade { 0% { background-color: #dcfce7; } 100% { background-color: transparent; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+.gl-toast[data-state="enter"] { animation: toast-in var(--dur-enter) var(--ease-out) both; }
+.gl-dialog[data-state="exit"] { animation: dialog-out var(--dur-exit) var(--ease-in) both; }
+.gl-saved-check path { stroke-dasharray: 1; animation: check-draw var(--dur-check) var(--ease-out) 150ms both; }
+.gl-changed { animation: highlight-fade 1500ms linear both; }
+.gl-saved-chip { animation: chip-fade 1200ms linear both; }
+.gl-btn { transition: transform var(--dur-press) var(--ease-out), background-color var(--dur-state) linear; }
+.gl-btn:active:not(:disabled) { transform: scale(0.98); }
+.gl-saving .gl-spinner { animation: spin 800ms linear infinite; }
+
+/* แผ่นล่างบนมือถือ: เลื่อนลงออก 200 ms แทนการจาง */
+@media (max-width: 639px) {
+  .gl-dialog[data-state="exit"] { animation: sheet-out 200ms var(--ease-in) both; }
+}
+
+/* ลดการเคลื่อนไหว: ลดการเคลื่อนที่ ไม่ปิดการแจ้ง (สี ป้าย และข้อความยังอยู่ครบ) */
+@media (prefers-reduced-motion: reduce) {
+  .gl-toast[data-state="enter"] { animation: fade-in 150ms linear both; }
+  .gl-dialog[data-state="exit"] { animation: fade-out 100ms linear both; }
+  .gl-saved-check path { animation: none; stroke-dashoffset: 0; }
+  .gl-saving .gl-spinner { animation: none; }
+  .gl-btn:active:not(:disabled) { transform: none; }
+}

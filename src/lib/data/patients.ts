@@ -12,7 +12,7 @@ import { parseAssessmentDetail, type AssessmentHeadline } from "./assessment-sto
 import { NoActiveRuleSetError, getActiveRuleSet } from "./risk-service";
 import { ageInYears, fullName, glucoseFreshness } from "./view";
 
-async function loadRules(): Promise<{ rules: RiskRules; ruleSetMissing: boolean }> {
+export async function loadRules(): Promise<{ rules: RiskRules; ruleSetMissing: boolean }> {
   try {
     const active = await getActiveRuleSet(prisma);
     return { rules: active.rules, ruleSetMissing: false };

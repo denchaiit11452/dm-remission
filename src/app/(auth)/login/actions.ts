@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase/server";
+import { classifyLoginError } from "@/lib/auth/login-error";
 import {
   checkLoginLockout,
   recordFailedLogin,
@@ -75,7 +76,13 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error || !data.user) {
-    // บันทึกการเข้าสู่ระบบผิดพลาด 1 ครั้งของ IP นี้
+    // แยกสาเหตุจริง: เฉพาะรหัสผ่านผิดเท่านั้นที่นับเป็นการกรอกผิด (เน็ตสะดุด/ถูกจำกัดความถี่ ไม่นับ)
+    const info = classifyLoginError(error);
+    if (!info.countsAsFailedAttempt) {
+      // บันทึกเฉพาะรหัสข้อผิดพลาด (ไม่บันทึกอีเมลหรือรหัสผ่าน) ไว้ไล่สาเหตุในเทอร์มินัล
+      console.error("login: Supabase ตอบ error ที่ไม่ใช่รหัสผ่านผิด", { kind: info.kind, code: error?.code, status: error?.status, name: error?.name });
+      return { error: info.message, email: rawEmail };
+    }
     const failStatus = recordFailedLogin(clientIp);
     if (failStatus.isLocked) {
       return {
