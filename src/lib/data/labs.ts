@@ -3,7 +3,7 @@
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/session";
-import { todayInBangkok } from "@/lib/date";
+import { toDateKey, todayInBangkok } from "@/lib/date";
 import type { RiskLevel } from "@/lib/risk/types";
 import { dateFromKey, toBloodPressureInput } from "./mappers";
 import {
@@ -21,6 +21,53 @@ export type SaveLabData = {
   newAlertTotal: number;
 };
 export type SaveLabResult = { ok: true; data: SaveLabData } | SaveFailure;
+
+export type LabRow = {
+  id: string;
+  recordedDate: string;
+  hba1c: number | null;
+  weightKg: number | null;
+  heightCm: number | null;
+  bmi: number | null;
+  sbp: number | null;
+  dbp: number | null;
+  note: string | null;
+  createdByName: string;
+  createdAt: string;
+  voided: { at: string; byName: string | null; reason: string | null } | null;
+};
+
+const LAB_LIST_LIMIT = 200;
+
+/** ประวัติผลตรวจ รวมรายการที่ยกเลิกแล้ว เพื่อให้ตรวจสอบย้อนหลังได้ */
+export async function listLabRecords(patientId: string): Promise<LabRow[]> {
+  await requireUser();
+  const rows = await prisma.labRecord.findMany({
+    where: { patientId },
+    orderBy: [{ recordedDate: "desc" }, { createdAt: "desc" }],
+    take: LAB_LIST_LIMIT,
+    select: {
+      id: true, recordedDate: true, hba1c: true, weightKg: true, heightCm: true, bmi: true, sbp: true, dbp: true, note: true,
+      createdAt: true, voidedAt: true, voidReason: true,
+      createdBy: { select: { fullName: true } },
+      voidedBy: { select: { fullName: true } },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    recordedDate: toDateKey(r.recordedDate),
+    hba1c: r.hba1c,
+    weightKg: r.weightKg,
+    heightCm: r.heightCm,
+    bmi: r.bmi,
+    sbp: r.sbp,
+    dbp: r.dbp,
+    note: r.note,
+    createdByName: r.createdBy.fullName,
+    createdAt: r.createdAt.toISOString(),
+    voided: r.voidedAt ? { at: r.voidedAt.toISOString(), byName: r.voidedBy?.fullName ?? null, reason: r.voidReason } : null,
+  }));
+}
 
 class PatientNotFoundError extends Error {
   constructor() { super("ไม่พบผู้ป่วย"); this.name = "PatientNotFoundError"; }

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/session";
 import { toDateKey, todayInBangkok } from "@/lib/date";
 import { buildDailyHistory, parseHistoryRange, type DailyHistory, type HistoryRange } from "@/lib/history";
-import type { RiskRules } from "@/lib/risk/types";
+import type { GlucoseReadingInput, RiskRules } from "@/lib/risk/types";
 import { dateFromKey, toGlucoseInput } from "./mappers";
 import { loadRules } from "./patients";
 
@@ -13,6 +13,44 @@ export type PatientHistory = {
   rules: Pick<RiskRules, "goodMin" | "goodMax">;
   latestDate: string | null;
 };
+
+export type GlucoseRecordRow = {
+  id: string;
+  period: GlucoseReadingInput["period"];
+  valueMgDl: number | null;
+  meterFlag: GlucoseReadingInput["meterFlag"];
+  measuredTime: string | null;
+  note: string | null;
+  createdByName: string;
+  createdAt: string;
+  voided: { at: string; byName: string | null; reason: string | null } | null;
+};
+
+/** ทุกรายการของวันที่วัด รวมรายการที่ยกเลิกแล้ว เพื่อให้ตรวจสอบย้อนหลังได้ */
+export async function listGlucoseRecordsOfDay(patientId: string, date: string): Promise<GlucoseRecordRow[]> {
+  await requireUser();
+  const rows = await prisma.glucoseReading.findMany({
+    where: { patientId, measuredDate: dateFromKey(date) },
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true, period: true, valueMgDl: true, meterFlag: true, measuredTime: true, note: true, createdAt: true,
+      voidedAt: true, voidReason: true,
+      createdBy: { select: { fullName: true } },
+      voidedBy: { select: { fullName: true } },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    period: r.period,
+    valueMgDl: r.valueMgDl,
+    meterFlag: r.meterFlag,
+    measuredTime: r.measuredTime,
+    note: r.note,
+    createdByName: r.createdBy.fullName,
+    createdAt: r.createdAt.toISOString(),
+    voided: r.voidedAt ? { at: r.voidedAt.toISOString(), byName: r.voidedBy?.fullName ?? null, reason: r.voidReason } : null,
+  }));
+}
 
 export async function getDailyHistory(
   patientId: string,

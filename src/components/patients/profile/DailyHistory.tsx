@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TEXT_LINK } from "@/components/forms/fields";
 import RiskBadge from "@/components/patients/RiskBadge";
 import { formatThaiDate, formatThaiRange } from "@/lib/format";
 import { MAX_RANGE_DAYS, PERIODS, PRESET_RANGES, type DailyHistory as History, type HistoryDay, type HistoryRange } from "@/lib/history";
@@ -11,6 +12,7 @@ type Props = {
   range: HistoryRange;
   goodMin: number;
   goodMax: number;
+  canManage: boolean;
 };
 
 const DAYS_STEP = 7;
@@ -25,6 +27,14 @@ function CriticalMark() {
       ⚠
     </span>
   );
+}
+
+function AddBackdatedLink({ patientId, date }: { patientId: string; date: string }) {
+  return <Link href={`/patients/${patientId}/glucose?date=${date}`} className={TEXT_LINK}>+ เพิ่มค่าย้อนหลัง</Link>;
+}
+
+function DayRecordsLink({ patientId, date, canManage }: { patientId: string; date: string; canManage: boolean }) {
+  return <Link href={`/patients/${patientId}/glucose/records?date=${date}`} className={TEXT_LINK}>{canManage ? "ดูหรือยกเลิกรายการ" : "ดูรายการ"}</Link>;
 }
 
 function DayLevel({ day }: { day: HistoryDay }) {
@@ -45,7 +55,7 @@ function Legend() {
   );
 }
 
-export default function DailyHistory({ patientId, history, range, goodMin, goodMax }: Props) {
+export default function DailyHistory({ patientId, history, range, goodMin, goodMax, canManage }: Props) {
   const base = `/patients/${patientId}?tab=history`;
   const { stats } = history;
   const spanDays = history.days.length;
@@ -146,6 +156,7 @@ export default function DailyHistory({ patientId, history, range, goodMin, goodM
                     {day.weekday}
                     {day.isLatest ? <span className="rounded-md border border-slate-500 bg-white px-1.5 py-0.5 text-xs font-medium text-slate-800">ล่าสุด</span> : null}
                   </p>
+                  {day.recorded ? <DayRecordsLink patientId={patientId} date={day.date} canManage={canManage} /> : null}
                 </th>
                 {day.recorded ? (
                   PERIODS.map((p, i) => (
@@ -156,6 +167,7 @@ export default function DailyHistory({ patientId, history, range, goodMin, goodM
                 ) : (
                   <td colSpan={4} className="border-l border-slate-200 px-4 py-3 text-center text-sm text-slate-700">
                     ไม่ได้บันทึกค่าน้ำตาลในวันนี้
+                    <span className="ml-3"><AddBackdatedLink patientId={patientId} date={day.date} /></span>
                   </td>
                 )}
                 <td className="border-l border-slate-200 px-4 py-3 align-middle"><DayLevel day={day} /></td>
@@ -189,6 +201,7 @@ export default function DailyHistory({ patientId, history, range, goodMin, goodM
             ) : (
               <p className="mt-2 text-sm text-slate-700">ไม่ได้บันทึกค่าน้ำตาลในวันนี้</p>
             )}
+            {day.recorded ? <DayRecordsLink patientId={patientId} date={day.date} canManage={canManage} /> : <AddBackdatedLink patientId={patientId} date={day.date} />}
           </li>
         ))}
       </ul>

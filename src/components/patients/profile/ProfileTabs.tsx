@@ -5,6 +5,7 @@ export const PROFILE_TABS = [
   { key: "trend", label: "กราฟแนวโน้ม" },
   { key: "history", label: "ประวัติรายวัน" },
   { key: "labs", label: "ผลตรวจ" },
+  { key: "medications", label: "ยา" },
   { key: "risk", label: "ความเสี่ยงและ Alert" },
   { key: "location", label: "พิกัด" },
 ] as const;

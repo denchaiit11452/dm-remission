@@ -1,8 +1,11 @@
+import Link from "next/link";
+import { PRIMARY_BUTTON } from "@/components/forms/fields";
 import PatientCards from "@/components/patients/PatientCards";
 import PatientFilters from "@/components/patients/PatientFilters";
 import PatientTable from "@/components/patients/PatientTable";
 import Pagination from "@/components/patients/Pagination";
 import ThresholdBanner from "@/components/patients/ThresholdBanner";
+import { canManageRecords } from "@/lib/auth/permissions";
 import { requireUser } from "@/lib/auth/session";
 import { listPatients } from "@/lib/data/patients";
 import { hasActiveFilters, parsePatientQuery } from "@/lib/patient-query";
@@ -11,8 +14,7 @@ export const metadata = { title: "ผู้ป่วย | DM Remission" };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-// หน้ารายชื่อผู้ป่วย (ขั้น 5C)
-// หมายเหตุ: ยังไม่มีปุ่ม "+ เพิ่มผู้ป่วย" โดยตั้งใจ เพราะฟอร์มเพิ่มผู้ป่วยอยู่ขั้น 5F (เพิ่มเมื่อฟอร์มพร้อม ทั้ง Desktop และ Mobile)
+// หน้ารายชื่อผู้ป่วย
 export default async function Page({ searchParams }: { searchParams: SearchParams }) {
   const user = await requireUser();
   const query = parsePatientQuery(await searchParams);
@@ -30,12 +32,15 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
 
   return (
     <section className="space-y-4">
-      <header>
-        <h1 className="text-2xl font-semibold text-slate-900">ผู้ป่วย</h1>
-        <p className="mt-1 text-sm text-slate-700">
-          {filtered ? `พบ ${result.total} ราย` : `ผู้ป่วยทั้งหมด ${result.total} ราย`}
-          <span className="md:hidden"> · เรียงตามระดับความเสี่ยง</span>
-        </p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-900">ผู้ป่วย</h1>
+          <p className="mt-1 text-sm text-slate-700">
+            {filtered ? `พบ ${result.total} ราย` : `ผู้ป่วยทั้งหมด ${result.total} ราย`}
+            <span className="md:hidden"> · เรียงตามระดับความเสี่ยง</span>
+          </p>
+        </div>
+        {canManageRecords(user.role) ? <Link href="/patients/new" className={`${PRIMARY_BUTTON} w-full sm:w-auto`}>+ เพิ่มผู้ป่วย</Link> : null}
       </header>
 
       <ThresholdBanner

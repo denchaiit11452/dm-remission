@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "@/components/forms/fields";
 import RiskBadge, { StaleTag } from "@/components/patients/RiskBadge";
 import { GENDER_LABELS, PROGRAM_STATUS_LABELS, formatAgo, formatThaiDate } from "@/lib/format";
 import type { PatientSummary } from "@/lib/data/patients";
@@ -29,10 +31,9 @@ function medicationNote(r: PatientSummary["remission"]): string | null {
 
 /**
  * การ์ดหัวโปรไฟล์ผู้ป่วย
- * หมายเหตุ: ยังไม่มีปุ่ม "+ บันทึกน้ำตาล" และ "ปรับระดับความเสี่ยง" โดยตั้งใจ (ฟอร์มอยู่ขั้น 5E)
- * ให้เพิ่มกลับทั้ง Desktop และ Mobile เมื่อฟอร์มพร้อม
+ * หมายเหตุ: ยังไม่มีปุ่ม "ปรับระดับความเสี่ยง" โดยตั้งใจ (เพิ่มพร้อมฟอร์ม Override)
  */
-export default function ProfileHeader({ summary }: { summary: PatientSummary }) {
+export default function ProfileHeader({ summary, canManage }: { summary: PatientSummary; canManage: boolean }) {
   const { patient, risk, remission, openAlertCount } = summary;
   const med = medicationNote(remission);
   const subtitle = [
@@ -44,9 +45,16 @@ export default function ProfileHeader({ summary }: { summary: PatientSummary }) 
 
   return (
     <section aria-labelledby="patient-name" className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 md:p-5">
-      <header>
-        <h1 id="patient-name" className="text-xl font-semibold text-slate-900 md:text-2xl">{patient.fullName}</h1>
-        <p className="mt-1 text-sm text-slate-700">{subtitle}</p>
+      <header className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 id="patient-name" className="text-xl font-semibold text-slate-900 md:text-2xl">{patient.fullName}</h1>
+          <p className="mt-1 text-sm text-slate-700">{subtitle}</p>
+        </div>
+        <div className="flex w-full flex-col gap-2 sm:flex-row md:w-auto">
+          {canManage ? <Link href={`/patients/${patient.id}/edit`} className={SECONDARY_BUTTON}>แก้ไขข้อมูล</Link> : null}
+          <Link href={`/patients/${patient.id}/labs/new`} className={SECONDARY_BUTTON}>+ บันทึกผลตรวจ</Link>
+          <Link href={`/patients/${patient.id}/glucose`} className={PRIMARY_BUTTON}>+ บันทึกน้ำตาล</Link>
+        </div>
       </header>
 
       <dl className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">

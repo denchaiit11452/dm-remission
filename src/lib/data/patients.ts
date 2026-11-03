@@ -1,5 +1,5 @@
 // อ่านข้อมูลผู้ป่วยสำหรับหน้ารายชื่อและหน้าโปรไฟล์
-// ไม่ส่งเลขบัตรประชาชนและพิกัดออกจากชั้นนี้ (ต้องขอผ่านฟังก์ชันที่ตรวจสิทธิ์โดยเฉพาะในอนาคต)
+// ไม่ส่งพิกัดออกจากชั้นนี้ (ต้องขอผ่านฟังก์ชันที่ตรวจสิทธิ์โดยเฉพาะในอนาคต)
 import type { DiabetesType, Gender, Prisma, ProgramStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/session";
@@ -9,6 +9,7 @@ import { DEFAULT_RISK_RULES, findMissingThresholds, type GlucoseThresholdKey } f
 import type { RiskLevel, RiskReason, RiskRules } from "@/lib/risk/types";
 import { assessRemission, type RemissionAssessment } from "@/lib/remission/remission";
 import { parseAssessmentDetail, type AssessmentHeadline } from "./assessment-store";
+import { dateFromKey } from "./mappers";
 import { NoActiveRuleSetError, getActiveRuleSet } from "./risk-service";
 import { ageInYears, fullName, glucoseFreshness } from "./view";
 
@@ -20,6 +21,23 @@ export async function loadRules(): Promise<{ rules: RiskRules; ruleSetMissing: b
     if (e instanceof NoActiveRuleSetError) return { rules: DEFAULT_RISK_RULES, ruleSetMissing: true };
     throw e;
   }
+}
+
+/**
+ * นับข้อมูลที่ยังใช้ประเมินระดับได้ เงื่อนไขตรงกับ recomputeRisk
+ * ถ้ายกเลิกข้อมูลจนไม่เหลือ recomputeRisk จะไม่สร้างแถวใหม่ แถวล่าสุดจึงเป็นผลเก่าที่ใช้ไม่ได้แล้ว
+ * ต้องแสดงเป็น "ยังไม่มีข้อมูล" แทนการแสดงระดับเดิมเหมือนยังเป็นปัจจุบัน
+ */
+function assessableDataCounts(today: string) {
+  const todayDate = dateFromKey(today);
+  return {
+    glucoseReadings: {
+      where: { voidedAt: null, measuredDate: { lte: todayDate }, OR: [{ valueMgDl: { not: null } }, { meterFlag: { not: "NONE" as const } }] },
+    },
+    labRecords: {
+      where: { voidedAt: null, recordedDate: { lte: todayDate }, OR: [{ sbp: { not: null } }, { dbp: { not: null } }] },
+    },
+  };
 }
 
 // ---------------------------------------------------------------- รายชื่อผู้ป่วย
@@ -84,12 +102,12 @@ export async function listPatients(params: ListPatientsParams = {}): Promise<Lis
     select: {
       id: true, hn: true, prefix: true, firstName: true, lastName: true, programStatus: true,
       riskAssessments: { orderBy: { createdAt: "desc" }, take: 1, select: { level: true, source: true, reasons: true } },
-      _count: { select: { alerts: { where: { status: "NEW" } } } },
+      _count: { select: { alerts: { where: { status: "NEW" } }, ...assessableDataCounts(today) } },
     },
   });
 
   let rows: PatientListRow[] = patients.map((p) => {
-    const a = p.riskAssessments[0];
+    const a = p._count.glucoseReadings + p._count.labRecords > 0 ? p.riskAssessments[0] : undefined;
     const detail = a ? parseAssessmentDetail(a.reasons) : null;
     const level = a?.level ?? null;
     const fresh = glucoseFreshness(detail?.glucoseDate ?? null, today, rules.staleDataDays, level !== null);
@@ -165,13 +183,13 @@ export async function getPatientSummary(id: string): Promise<PatientSummary | nu
       diabetesType: true, programStartDate: true, programStatus: true,
       riskAssessments: { orderBy: { createdAt: "desc" }, take: 1, select: { level: true, source: true, reasons: true, overrideReason: true } },
       labRecords: { where: { voidedAt: null, hba1c: { not: null } }, select: { id: true, recordedDate: true, hba1c: true, voidedAt: true } },
-      medications: { select: { startDate: true, endDate: true, isDiabetesDrug: true } },
-      _count: { select: { alerts: { where: { status: "NEW" } } } },
+      medications: { where: { voidedAt: null }, select: { startDate: true, endDate: true, isDiabetesDrug: true } },
+      _count: { select: { alerts: { where: { status: "NEW" } }, ...assessableDataCounts(today) } },
     },
   });
   if (!p) return null;
 
-  const a = p.riskAssessments[0];
+  const a = p._count.glucoseReadings + p._count.labRecords > 0 ? p.riskAssessments[0] : undefined;
   const detail = a ? parseAssessmentDetail(a.reasons) : null;
   const level = a?.level ?? null;
   const fresh = glucoseFreshness(detail?.glucoseDate ?? null, today, rules.staleDataDays, level !== null);

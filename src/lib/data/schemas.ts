@@ -69,8 +69,8 @@ export const saveLabSchema = z
     hba1c: optionalNumber(LAB_LIMITS.hba1c.min, LAB_LIMITS.hba1c.max, "HbA1c"),
     weightKg: optionalNumber(LAB_LIMITS.weightKg.min, LAB_LIMITS.weightKg.max, "น้ำหนัก"),
     heightCm: optionalNumber(LAB_LIMITS.heightCm.min, LAB_LIMITS.heightCm.max, "ส่วนสูง"),
-    sbp: z.number().int("ความดันต้องเป็นจำนวนเต็ม").min(LAB_LIMITS.sbp.min).max(LAB_LIMITS.sbp.max).nullish(),
-    dbp: z.number().int("ความดันต้องเป็นจำนวนเต็ม").min(LAB_LIMITS.dbp.min).max(LAB_LIMITS.dbp.max).nullish(),
+    sbp: optionalNumber(LAB_LIMITS.sbp.min, LAB_LIMITS.sbp.max, "ความดันตัวบน").refine((v) => v == null || Number.isInteger(v), "ความดันต้องเป็นจำนวนเต็ม"),
+    dbp: optionalNumber(LAB_LIMITS.dbp.min, LAB_LIMITS.dbp.max, "ความดันตัวล่าง").refine((v) => v == null || Number.isInteger(v), "ความดันต้องเป็นจำนวนเต็ม"),
     note: z.string().trim().max(500, "หมายเหตุยาวเกิน 500 ตัวอักษร").nullish(),
   })
   .superRefine((v, ctx) => {
@@ -81,8 +81,58 @@ export const saveLabSchema = z
     }
   });
 
+const optionalText = (max: number, label: string) => z.string().trim().max(max, `${label}ยาวเกิน ${max} ตัวอักษร`).nullish();
+const requiredText = (max: number, label: string) =>
+  z.string({ message: `กรุณากรอก${label}` }).trim().min(1, `กรุณากรอก${label}`).max(max, `${label}ยาวเกิน ${max} ตัวอักษร`);
+
+// ระบบไม่เก็บเลขบัตรประชาชน (โรงพยาบาลยืนยันแล้ว) ใช้ HN ระบุตัวผู้ป่วย
+// ไม่รับสถานะโปรแกรมโดยตั้งใจ เพราะเป็นผลการประเมิน Remission ไม่ใช่ข้อมูลทะเบียน
+export const patientSchema = z.object({
+  hn: z.string({ message: "กรุณากรอก HN" }).trim().min(1, "กรุณากรอก HN").max(30, "HN ยาวเกิน 30 ตัวอักษร"),
+  prefix: optionalText(30, "คำนำหน้า"),
+  firstName: requiredText(100, "ชื่อ"),
+  lastName: requiredText(100, "นามสกุล"),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"], { message: "เลือกเพศ" }).nullish(),
+  birthDate: dateKey.nullish(),
+  phone: optionalText(30, "เบอร์โทรศัพท์"),
+  address: optionalText(500, "ที่อยู่"),
+  emergencyContactName: optionalText(200, "ชื่อผู้ติดต่อฉุกเฉิน"),
+  emergencyContactPhone: optionalText(30, "เบอร์ผู้ติดต่อฉุกเฉิน"),
+  diabetesType: z.enum(["TYPE1", "TYPE2", "OTHER", "UNKNOWN"], { message: "เลือกชนิดเบาหวาน" }).default("UNKNOWN"),
+  diagnosedAt: dateKey.nullish(),
+  programStartDate: dateKey.nullish(),
+  notes: optionalText(2000, "หมายเหตุ"),
+});
+export const updatePatientSchema = patientSchema.extend({ id: z.string().uuid("รหัสผู้ป่วยไม่ถูกต้อง") });
+
+export const saveMedicationSchema = z
+  .object({
+    patientId: z.string().uuid("รหัสผู้ป่วยไม่ถูกต้อง"),
+    drugName: requiredText(200, "ชื่อยา"),
+    isDiabetesDrug: z.boolean({ message: "ระบุว่าเป็นยาเบาหวานหรือไม่" }),
+    startDate: dateKey,
+    endDate: dateKey.nullish(),
+    note: optionalText(500, "หมายเหตุ"),
+  })
+  .superRefine((v, ctx) => {
+    if (v.endDate && v.endDate < v.startDate) {
+      ctx.addIssue({ code: "custom", path: ["endDate"], message: "วันที่หยุดยาต้องไม่ก่อนวันที่เริ่มยา" });
+    }
+  });
+
+export const stopMedicationSchema = z.object({
+  id: z.string().uuid("รหัสรายการไม่ถูกต้อง"),
+  endDate: dateKey,
+});
+
+export const voidRecordSchema = z.object({
+  id: z.string().uuid("รหัสรายการไม่ถูกต้อง"),
+  reason: requiredText(500, "เหตุผลที่ยกเลิก"),
+});
+
 export type SaveGlucoseInput = z.output<typeof saveGlucoseSchema>;
 export type SaveLabInput = z.output<typeof saveLabSchema>;
+export type PatientInput = z.output<typeof patientSchema>;
 
 /** แปลง error ของ zod เป็นข้อความรายช่อง (key = path เช่น "entries.1.valueMgDl") */
 export function toFieldErrors(error: z.ZodError): { message: string; fieldErrors: Record<string, string> } {
