@@ -22,7 +22,7 @@ type Props = {
 
 export default function LabForm({ patient, rules, today }: Props) {
   const router = useRouter();
-  const initialValues: LabFormValues = { recordedDate: today, hba1c: "", weightKg: "", heightCm: "", sbp: "", dbp: "", note: "" };
+  const initialValues: LabFormValues = { recordedDate: today, hba1c: "", fbs: "", weightKg: "", heightCm: "", sbp: "", dbp: "", note: "" };
   const [values, setValues] = useState(initialValues);
   const [saving, setSaving] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -106,6 +106,7 @@ export default function LabForm({ patient, rules, today }: Props) {
         <p className="text-sm text-slate-700">กรอกเฉพาะรายการที่ตรวจในครั้งนี้ อย่างน้อย 1 รายการ</p>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <TextField {...field("hba1c")} label="HbA1c (%)" inputMode="decimal" />
+          <TextField {...field("fbs")} label="FBS (mg/dL)" inputMode="numeric" />
           <TextField {...field("weightKg")} label="น้ำหนัก (กก.)" inputMode="decimal" />
           <TextField {...field("heightCm")} label="ส่วนสูง (ซม.)" inputMode="decimal" />
           <TextField {...field("sbp")} label="ความดันตัวบน (mmHg)" inputMode="numeric" />

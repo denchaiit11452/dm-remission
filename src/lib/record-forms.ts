@@ -10,6 +10,7 @@ export function parseOptionalNumber(value: string): number | null {
 export type LabFormValues = {
   recordedDate: string;
   hba1c: string;
+  fbs: string;
   weightKg: string;
   heightCm: string;
   sbp: string;
@@ -22,6 +23,7 @@ export function toLabPayload(patientId: string, v: LabFormValues) {
     patientId,
     recordedDate: v.recordedDate,
     hba1c: parseOptionalNumber(v.hba1c),
+    fbs: parseOptionalNumber(v.fbs),
     weightKg: parseOptionalNumber(v.weightKg),
     heightCm: parseOptionalNumber(v.heightCm),
     sbp: parseOptionalNumber(v.sbp),

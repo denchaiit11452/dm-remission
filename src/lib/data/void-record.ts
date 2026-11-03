@@ -79,7 +79,7 @@ export async function voidGlucoseCore(tx: Tx, p: VoidParams): Promise<VoidCoreRe
 export async function voidLabCore(tx: Tx, p: VoidParams): Promise<VoidCoreResult> {
   const row = await tx.labRecord.findFirst({
     where: { id: p.id, patient: { deletedAt: null } },
-    select: { patientId: true, recordedDate: true, hba1c: true, weightKg: true, heightCm: true, bmi: true, sbp: true, dbp: true, voidedAt: true },
+    select: { patientId: true, recordedDate: true, hba1c: true, fbs: true, weightKg: true, heightCm: true, bmi: true, sbp: true, dbp: true, voidedAt: true },
   });
   if (!row) return { kind: "not_found" };
   if (row.voidedAt) return { kind: "already" };
@@ -89,7 +89,7 @@ export async function voidLabCore(tx: Tx, p: VoidParams): Promise<VoidCoreResult
     alertSource: { labRecordId: p.id },
     patientId: row.patientId,
     snapshot: {
-      recordedDate: toDateKey(row.recordedDate), hba1c: row.hba1c, weightKg: row.weightKg, heightCm: row.heightCm,
+      recordedDate: toDateKey(row.recordedDate), hba1c: row.hba1c, fbs: row.fbs, weightKg: row.weightKg, heightCm: row.heightCm,
       bmi: row.bmi, sbp: row.sbp, dbp: row.dbp,
     },
     markVoided: () => tx.labRecord.updateMany({

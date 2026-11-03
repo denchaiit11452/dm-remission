@@ -10,6 +10,7 @@ export const GLUCOSE_ENTRY_LIMITS = { min: 10, max: 1000 } as const;
 /** ช่วงค่าผลตรวจอื่นที่รับได้ (กันพิมพ์ผิดเช่นกัน) */
 export const LAB_LIMITS = {
   hba1c: { min: 3, max: 20 },
+  fbs: GLUCOSE_ENTRY_LIMITS,
   weightKg: { min: 10, max: 400 },
   heightCm: { min: 50, max: 260 },
   sbp: { min: 50, max: 300 },
@@ -67,6 +68,7 @@ export const saveLabSchema = z
     patientId: z.string().uuid("รหัสผู้ป่วยไม่ถูกต้อง"),
     recordedDate: dateKey,
     hba1c: optionalNumber(LAB_LIMITS.hba1c.min, LAB_LIMITS.hba1c.max, "HbA1c"),
+    fbs: optionalNumber(LAB_LIMITS.fbs.min, LAB_LIMITS.fbs.max, "FBS").refine((v) => v == null || Number.isInteger(v), "FBS ต้องเป็นจำนวนเต็ม"),
     weightKg: optionalNumber(LAB_LIMITS.weightKg.min, LAB_LIMITS.weightKg.max, "น้ำหนัก"),
     heightCm: optionalNumber(LAB_LIMITS.heightCm.min, LAB_LIMITS.heightCm.max, "ส่วนสูง"),
     sbp: optionalNumber(LAB_LIMITS.sbp.min, LAB_LIMITS.sbp.max, "ความดันตัวบน").refine((v) => v == null || Number.isInteger(v), "ความดันต้องเป็นจำนวนเต็ม"),
@@ -74,7 +76,7 @@ export const saveLabSchema = z
     note: z.string().trim().max(500, "หมายเหตุยาวเกิน 500 ตัวอักษร").nullish(),
   })
   .superRefine((v, ctx) => {
-    const has = [v.hba1c, v.weightKg, v.heightCm, v.sbp, v.dbp].some((x) => x !== null && x !== undefined);
+    const has = [v.hba1c, v.fbs, v.weightKg, v.heightCm, v.sbp, v.dbp].some((x) => x !== null && x !== undefined);
     if (!has) ctx.addIssue({ code: "custom", path: ["hba1c"], message: "กรอกผลตรวจอย่างน้อย 1 อย่าง" });
     if ((v.sbp == null) !== (v.dbp == null)) {
       ctx.addIssue({ code: "custom", path: [v.sbp == null ? "sbp" : "dbp"], message: "กรอกความดันให้ครบทั้งตัวบนและตัวล่าง" });

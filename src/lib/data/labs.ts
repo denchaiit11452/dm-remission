@@ -1,4 +1,4 @@
-// บันทึกผลตรวจตามนัด: HbA1c, น้ำหนัก/ส่วนสูง/BMI, ความดันโลหิต
+// บันทึกผลตรวจตามนัด: HbA1c, FBS, น้ำหนัก/ส่วนสูง/BMI, ความดันโลหิต
 // ความดันวิกฤต (SBP >= เกณฑ์ หรือ DBP >= เกณฑ์) สร้าง Alert ทันที และประเมินความเสี่ยงใหม่
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -26,6 +26,7 @@ export type LabRow = {
   id: string;
   recordedDate: string;
   hba1c: number | null;
+  fbs: number | null;
   weightKg: number | null;
   heightCm: number | null;
   bmi: number | null;
@@ -47,7 +48,7 @@ export async function listLabRecords(patientId: string): Promise<LabRow[]> {
     orderBy: [{ recordedDate: "desc" }, { createdAt: "desc" }],
     take: LAB_LIST_LIMIT,
     select: {
-      id: true, recordedDate: true, hba1c: true, weightKg: true, heightCm: true, bmi: true, sbp: true, dbp: true, note: true,
+      id: true, recordedDate: true, hba1c: true, fbs: true, weightKg: true, heightCm: true, bmi: true, sbp: true, dbp: true, note: true,
       createdAt: true, voidedAt: true, voidReason: true,
       createdBy: { select: { fullName: true } },
       voidedBy: { select: { fullName: true } },
@@ -57,6 +58,7 @@ export async function listLabRecords(patientId: string): Promise<LabRow[]> {
     id: r.id,
     recordedDate: toDateKey(r.recordedDate),
     hba1c: r.hba1c,
+    fbs: r.fbs,
     weightKg: r.weightKg,
     heightCm: r.heightCm,
     bmi: r.bmi,
@@ -90,6 +92,7 @@ export async function saveLabCore(
       patientId: input.patientId,
       recordedDate: dateFromKey(input.recordedDate),
       hba1c: input.hba1c ?? null,
+      fbs: input.fbs ?? null,
       weightKg: input.weightKg ?? null,
       heightCm: input.heightCm ?? null,
       bmi: computeBmi(input.weightKg, input.heightCm),
@@ -109,7 +112,7 @@ export async function saveLabCore(
   await tx.auditLog.create({
     data: {
       userId, action: "CREATE", entity: "lab_record", entityId: rec.id, patientId: input.patientId,
-      after: { recordedDate: input.recordedDate, hba1c: input.hba1c ?? null, sbp: input.sbp ?? null, dbp: input.dbp ?? null } as Prisma.InputJsonValue,
+      after: { recordedDate: input.recordedDate, hba1c: input.hba1c ?? null, fbs: input.fbs ?? null, sbp: input.sbp ?? null, dbp: input.dbp ?? null } as Prisma.InputJsonValue,
     },
   });
 

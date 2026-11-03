@@ -23,6 +23,7 @@ function bmiText(row: LabRow): string {
 function voidSummary(row: LabRow): string {
   const parts = [
     row.hba1c !== null ? `HbA1c ${row.hba1c}%` : null,
+    row.fbs !== null ? `FBS ${row.fbs} mg/dL` : null,
     row.sbp !== null || row.dbp !== null ? `ความดัน ${row.sbp ?? "-"}/${row.dbp ?? "-"}` : null,
     row.weightKg !== null ? `น้ำหนัก ${row.weightKg} กก.` : null,
     row.heightCm !== null ? `ส่วนสูง ${row.heightCm} ซม.` : null,
@@ -53,12 +54,13 @@ export default function LabHistory({ patientId, rows, canManage }: Props) {
       ) : (
         <>
           <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white md:block">
-            <table className="w-full min-w-[820px] border-collapse">
+            <table className="w-full min-w-[920px] border-collapse">
               <caption className="sr-only">ประวัติผลตรวจ เรียงจากวันที่ตรวจล่าสุด</caption>
               <thead className="bg-slate-50 text-sm text-slate-800">
                 <tr className="border-b border-slate-200">
                   <th scope="col" className="px-4 py-3 text-left font-semibold">วันที่ตรวจ</th>
                   <th scope="col" className="px-3 py-3 text-left font-semibold">HbA1c</th>
+                  <th scope="col" className="px-3 py-3 text-left font-semibold">FBS</th>
                   <th scope="col" className="px-3 py-3 text-left font-semibold">ความดัน</th>
                   <th scope="col" className="px-3 py-3 text-left font-semibold">น้ำหนัก</th>
                   <th scope="col" className="px-3 py-3 text-left font-semibold">ส่วนสูง</th>
@@ -76,6 +78,7 @@ export default function LabHistory({ patientId, rows, canManage }: Props) {
                         <RecordMeta row={row} />
                       </th>
                       <td className={cell}>{value(row.hba1c, "%")}</td>
+                      <td className={cell}>{value(row.fbs, "mg/dL")}</td>
                       <td className={cell}>{bloodPressure(row)}</td>
                       <td className={cell}>{value(row.weightKg, "กก.")}</td>
                       <td className={cell}>{value(row.heightCm, "ซม.")}</td>
@@ -98,6 +101,7 @@ export default function LabHistory({ patientId, rows, canManage }: Props) {
                 <p className="font-semibold text-slate-900">{formatThaiDate(row.recordedDate)}</p>
                 <dl className={`mt-2 grid grid-cols-2 gap-2 text-sm ${row.voided ? "text-slate-600 line-through" : "text-slate-900"}`}>
                   <div><dt className="text-slate-700">HbA1c</dt><dd className="font-medium">{value(row.hba1c, "%")}</dd></div>
+                  <div><dt className="text-slate-700">FBS</dt><dd className="font-medium">{value(row.fbs, "mg/dL")}</dd></div>
                   <div><dt className="text-slate-700">ความดัน</dt><dd className="font-medium">{bloodPressure(row)}</dd></div>
                   <div><dt className="text-slate-700">น้ำหนัก</dt><dd className="font-medium">{value(row.weightKg, "กก.")}</dd></div>
                   <div><dt className="text-slate-700">ส่วนสูง</dt><dd className="font-medium">{value(row.heightCm, "ซม.")}</dd></div>

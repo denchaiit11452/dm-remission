@@ -10,7 +10,7 @@ const { voidGlucoseCore, voidLabCore } = await import("./void-record");
 const NOW = new Date("2026-10-15T03:00:00Z");
 const DAY = new Date("2026-10-14T00:00:00Z");
 const GLUCOSE = { patientId: "p1", measuredDate: DAY, period: "AFTER_DINNER", valueMgDl: 480, meterFlag: "NONE", voidedAt: null as Date | null };
-const LAB = { patientId: "p1", recordedDate: DAY, hba1c: null, weightKg: null, heightCm: null, bmi: null, sbp: 190, dbp: 100, voidedAt: null as Date | null };
+const LAB = { patientId: "p1", recordedDate: DAY, hba1c: null, fbs: null, weightKg: null, heightCm: null, bmi: null, sbp: 190, dbp: 100, voidedAt: null as Date | null };
 
 function fakeTx(opts: { glucose?: typeof GLUCOSE | null; lab?: typeof LAB | null; lostRace?: boolean; alertsCancelled?: number }) {
   const calls = { audits: [] as { action: string; after: Record<string, unknown> }[], alertWhere: [] as unknown[], marked: [] as unknown[] };

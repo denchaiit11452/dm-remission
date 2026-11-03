@@ -3,7 +3,7 @@ import { patientSchema, saveLabSchema, saveMedicationSchema, voidRecordSchema } 
 import { medicationStatus, parseOptionalNumber, toLabPayload } from "./record-forms";
 
 const PID = "3f2b8c1e-9d4a-4b7e-8c21-5a6d7e8f9a0b";
-const EMPTY = { recordedDate: "2026-10-15", hba1c: "", weightKg: "", heightCm: "", sbp: "", dbp: "", note: "" };
+const EMPTY = { recordedDate: "2026-10-15", hba1c: "", fbs: "", weightKg: "", heightCm: "", sbp: "", dbp: "", note: "" };
 
 describe("parseOptionalNumber", () => {
   it("ช่องว่าง = null และอ่านทศนิยมได้", () => {
@@ -28,6 +28,18 @@ describe("toLabPayload กับ saveLabSchema", () => {
     expect(saveLabSchema.safeParse(toLabPayload(PID, { ...EMPTY, sbp: "120" })).success).toBe(false);
     expect(saveLabSchema.safeParse(toLabPayload(PID, { ...EMPTY, sbp: "120.5", dbp: "80" })).success).toBe(false);
     expect(saveLabSchema.safeParse(toLabPayload(PID, { ...EMPTY, sbp: "120", dbp: "80" })).success).toBe(true);
+  });
+  it("กรอก FBS อย่างเดียวได้ และส่งค่าเป็นตัวเลข", () => {
+    const r = saveLabSchema.safeParse(toLabPayload(PID, { ...EMPTY, fbs: "126" }));
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.fbs).toBe(126);
+  });
+  it("FBS ต้องเป็นจำนวนเต็มในช่วงที่รับได้", () => {
+    for (const fbs of ["abc", "99.5", "9", "1001"]) {
+      const r = saveLabSchema.safeParse(toLabPayload(PID, { ...EMPTY, fbs }));
+      expect(r.success).toBe(false);
+      if (!r.success) expect(r.error.issues[0].message).toContain("FBS");
+    }
   });
 });
 

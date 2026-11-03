@@ -292,7 +292,7 @@ model GlucoseReading {
   @@map("glucose_readings")
 }
 
-/// ผลตรวจตามนัด: HbA1c, น้ำหนัก, ส่วนสูง, BMI, ความดันโลหิต
+/// ผลตรวจตามนัด: HbA1c, FBS, น้ำหนัก, ส่วนสูง, BMI, ความดันโลหิต
 /// ทุกฟิลด์เป็น optional เพราะแต่ละครั้งอาจตรวจไม่ครบ
 model LabRecord {
   id             String       @id @default(uuid()) @db.Uuid
@@ -300,6 +300,7 @@ model LabRecord {
   recordedDate   DateTime     @db.Date // วันที่ตรวจ
 
   hba1c          Float?       // %
+  fbs            Int?         // น้ำตาลหลังอดอาหาร mg/dL (เก็บและแสดงผลเท่านั้น ยังไม่ใช้คำนวณระดับความเสี่ยง)
   weightKg       Float?
   heightCm       Float?
   bmi            Float?       // เก็บค่า ณ ตอนบันทึกเพื่อคงประวัติ (คำนวณซ้ำได้)
