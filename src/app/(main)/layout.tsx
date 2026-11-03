@@ -1,6 +1,7 @@
 import AppShell from "@/components/shell/AppShell";
 import IdleLogout from "@/components/IdleLogout";
 import CriticalAlertWatcher from "@/components/alerts/CriticalAlertWatcher";
+import { SaveToastProvider } from "@/components/forms/SaveToast";
 import { ROLE_LABELS, requireUser } from "@/lib/auth/session";
 import ServiceUnavailableScreen from "@/components/system/ServiceUnavailableScreen";
 import { countNewAlerts } from "@/lib/data/alerts";
@@ -23,12 +24,14 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
   return (
     <>
-      <AppShell
-        user={{ fullName: user.fullName, role: user.role, roleLabel: ROLE_LABELS[user.role] }}
-        alertCount={alertCount}
-      >
-        {children}
-      </AppShell>
+      <SaveToastProvider>
+        <AppShell
+          user={{ fullName: user.fullName, role: user.role, roleLabel: ROLE_LABELS[user.role] }}
+          alertCount={alertCount}
+        >
+          {children}
+        </AppShell>
+      </SaveToastProvider>
       <CriticalAlertWatcher />
       <IdleLogout />
     </>

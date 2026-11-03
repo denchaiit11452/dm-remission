@@ -1,0 +1,9 @@
+/* popup แจ้งผลการบันทึก: ค่าเดียวกับ SAVE-MOTION.md ลอยทับเนื้อหาโดยไม่ดันหน้า */
+@keyframes save-toast-in { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes save-toast-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.save-toast { animation: save-toast-in 300ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .save-toast { animation: save-toast-fade 150ms linear both; }
+}

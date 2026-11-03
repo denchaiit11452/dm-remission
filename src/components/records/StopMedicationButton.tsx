@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { stopMedicationAction } from "@/app/(main)/patients/actions";
 import ActionDialog from "@/components/forms/ActionDialog";
+import { useSaveToast } from "@/components/forms/SaveToast";
 import { FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, TextField } from "@/components/forms/fields";
 
 type Props = { id: string; drugName: string; startDate: string; today: string };
@@ -11,6 +12,7 @@ type Props = { id: string; drugName: string; startDate: string; today: string };
 /** บันทึกวันที่หยุดยา (วันแรกที่ไม่ได้ใช้ยาแล้ว ใช้เริ่มนับวันหยุดยาของ Remission) */
 export default function StopMedicationButton({ id, drugName, startDate, today }: Props) {
   const router = useRouter();
+  const showSaved = useSaveToast();
   const [open, setOpen] = useState(false);
   const [endDate, setEndDate] = useState(today);
   const [saving, setSaving] = useState(false);
@@ -27,6 +29,7 @@ export default function StopMedicationButton({ id, drugName, startDate, today }:
         return;
       }
       setOpen(false);
+      showSaved({ title: "บันทึกการหยุดยาแล้ว", detail: drugName });
       router.refresh();
     } catch {
       setError("บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { saveRuleSetAction } from "@/app/(main)/settings/actions";
 import ActionDialog from "@/components/forms/ActionDialog";
+import { useSaveToast } from "@/components/forms/SaveToast";
 import { FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, TEXT_LINK, TextAreaField, TextField } from "@/components/forms/fields";
 import type { RecomputeSummary } from "@/lib/data/rule-sets";
 import { RISK_LEVEL_LABELS } from "@/lib/risk/levels";
@@ -41,6 +42,7 @@ function SaveOutcome({ saved, onEditAgain }: { saved: Saved; onEditAgain: () => 
 /** ฟอร์มเกณฑ์: บันทึกเป็นเวอร์ชันใหม่เสมอ ต้องระบุเหตุผล และยืนยันก่อนบันทึกเพราะมีผลกับผู้ป่วยทุกคน */
 export default function RuleSetForm({ activeVersion, rules }: Props) {
   const router = useRouter();
+  const showSaved = useSaveToast();
   const [values, setValues] = useState<RuleFormValues>(() => toRuleFormValues(rules));
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -66,6 +68,7 @@ export default function RuleSetForm({ activeVersion, rules }: Props) {
       }
       setSaved({ version: result.version, summary: result.summary });
       setValues((v) => ({ ...v, changeReason: "" }));
+      showSaved({ title: `บันทึกเกณฑ์เวอร์ชัน ${result.version} แล้ว`, detail: `ระดับเปลี่ยน ${result.summary.changes.length} ราย รายละเอียดอยู่ในหน้านี้` });
       router.refresh();
     } catch {
       setError("บันทึกเกณฑ์ไม่สำเร็จ เกณฑ์เดิมยังใช้งานอยู่ กรุณาลองใหม่อีกครั้ง");

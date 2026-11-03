@@ -4,12 +4,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { saveMedicationAction } from "@/app/(main)/patients/actions";
+import { useSaveToast } from "@/components/forms/SaveToast";
 import { FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, TextAreaField, TextField } from "@/components/forms/fields";
 
 type Props = { patientId: string; today: string };
 
 export default function MedicationForm({ patientId, today }: Props) {
   const router = useRouter();
+  const showSaved = useSaveToast();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -46,6 +48,7 @@ export default function MedicationForm({ patientId, today }: Props) {
         setSaving(false);
         return;
       }
+      showSaved({ title: "บันทึกยาแล้ว", detail: text("drugName").trim() });
       router.push(backHref); // คงสถานะกำลังบันทึกไว้จนเปลี่ยนหน้า กันกดซ้ำ
     } catch {
       setError("บันทึกไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาลองใหม่อีกครั้ง");

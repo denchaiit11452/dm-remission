@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createPatientAction, updatePatientAction } from "@/app/(main)/patients/actions";
+import { useSaveToast } from "@/components/forms/SaveToast";
 import { FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, SelectField, TextAreaField, TextField } from "@/components/forms/fields";
 import { GENDER_LABELS } from "@/lib/format";
 import { DIABETES_TYPE_LABELS, toPatientPayload, type PatientFormValues } from "@/lib/patient-form";
@@ -18,6 +19,7 @@ type Props = {
 
 export default function PatientForm({ patientId, initial, today, cancelHref }: Props) {
   const router = useRouter();
+  const showSaved = useSaveToast();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -48,6 +50,7 @@ export default function PatientForm({ patientId, initial, today, cancelHref }: P
         setSaving(false);
         return;
       }
+      showSaved({ title: patientId ? "บันทึกการแก้ไขข้อมูลผู้ป่วยแล้ว" : "เพิ่มผู้ป่วยแล้ว", detail: `HN ${values.hn}` });
       router.push(`/patients/${result.id}`); // คงสถานะกำลังบันทึกไว้จนเปลี่ยนหน้า กันกดซ้ำ
     } catch {
       setError("บันทึกไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาลองใหม่อีกครั้ง");

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import { saveLabAction } from "@/app/(main)/patients/actions";
 import ActionDialog from "@/components/forms/ActionDialog";
+import { useSaveToast } from "@/components/forms/SaveToast";
 import { FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, TextField } from "@/components/forms/fields";
 import LabChangeText from "@/components/records/LabChangeText";
 import type { SaveLabData } from "@/lib/data/labs";
@@ -78,6 +79,7 @@ function ComparisonRows({ items }: { items: LabComparison[] }) {
 
 export default function LabForm({ patient, rules, today, series }: Props) {
   const router = useRouter();
+  const showSaved = useSaveToast();
   const initialValues: LabFormValues = { recordedDate: today, hba1c: "", fbs: "", weightKg: "", heightCm: "", sbp: "", dbp: "", note: "" };
   const [values, setValues] = useState(initialValues);
   const [saving, setSaving] = useState(false);
@@ -123,6 +125,10 @@ export default function LabForm({ patient, rules, today, series }: Props) {
         return;
       }
       setSaved({ data: result.data, comparisons });
+      showSaved({
+        title: "บันทึกผลตรวจแล้ว",
+        detail: result.data.alertsCreated > 0 ? `สร้าง Alert ${result.data.alertsCreated} รายการ` : "ไม่มี Alert ใหม่",
+      });
       router.refresh(); // ปรับตัวเลข Alert บนเมนู
     } catch {
       setError("บันทึกไม่สำเร็จ ข้อมูลที่กรอกยังอยู่ กรุณาลองใหม่อีกครั้ง");
