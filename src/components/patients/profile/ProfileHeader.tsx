@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "@/components/forms/fields";
 import RiskBadge, { StaleTag } from "@/components/patients/RiskBadge";
-import RemissionPanel, { REMISSION_STATUS_LABELS } from "@/components/patients/profile/RemissionPanel";
+import RemissionPanel, { remissionStatusLabel } from "@/components/patients/profile/RemissionPanel";
 import { GENDER_LABELS, PROGRAM_STATUS_LABELS, formatAgo, formatThaiDate } from "@/lib/format";
 import type { PatientSummary } from "@/lib/data/patients";
 import type { RiskLevel } from "@/lib/risk/types";
@@ -35,7 +35,7 @@ function medicationNote(r: PatientSummary["remission"]): string | null {
  * หมายเหตุ: ยังไม่มีปุ่ม "ปรับระดับความเสี่ยง" โดยตั้งใจ (เพิ่มพร้อมฟอร์ม Override)
  */
 export default function ProfileHeader({ summary, canManage, canConfirmNoDrug }: { summary: PatientSummary; canManage: boolean; canConfirmNoDrug: boolean }) {
-  const { patient, risk, remission, noDrugConfirmation, openAlertCount } = summary;
+  const { patient, risk, remission, noDrugConfirmation, openAlertCount, ruleSetMissing } = summary;
   const med = medicationNote(remission);
   const subtitle = [
     `HN ${patient.hn}`,
@@ -66,7 +66,7 @@ export default function ProfileHeader({ summary, canManage, canConfirmNoDrug }: 
           </span>
         </Field>
         <Field label="สถานะ Remission">
-          {REMISSION_STATUS_LABELS[remission.status]}
+          {remissionStatusLabel(remission.status, ruleSetMissing)}
           {med ? <span className="font-normal text-slate-700"> ({med})</span> : null}
         </Field>
         <Field label="สถานะโปรแกรม">{PROGRAM_STATUS_LABELS[patient.programStatus]}</Field>
@@ -103,7 +103,7 @@ export default function ProfileHeader({ summary, canManage, canConfirmNoDrug }: 
         ) : null}
       </div>
 
-      <RemissionPanel patientId={patient.id} remission={remission} confirmation={noDrugConfirmation} canConfirm={canConfirmNoDrug} />
+      <RemissionPanel patientId={patient.id} remission={remission} confirmation={noDrugConfirmation} canConfirm={canConfirmNoDrug} ruleSetMissing={ruleSetMissing} />
     </section>
   );
 }
