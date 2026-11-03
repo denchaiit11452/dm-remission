@@ -15,8 +15,9 @@ export const DEFAULT_RISK_RULES: RiskRules = {
   criticalGlucoseAbove: null,
   criticalSbp: 180,
   criticalDbp: 120,
-  remissionHba1cMax: 6.5,
+  remissionHba1cMax: 6.0,
   remissionMedFreeDays: 90,
+  remissionHba1cMinDaysAfterStop: 7,
   staleDataDays: 7,
   alertOnHighRisk: false,
 };
@@ -95,8 +96,16 @@ export function validateRiskRules(rules: RiskRules): string[] {
   if (!Number.isInteger(rules.remissionMedFreeDays) || rules.remissionMedFreeDays < 0) {
     problems.push("จำนวนวันที่หยุดยาต้องเป็นจำนวนเต็มตั้งแต่ 0");
   }
+  if (!Number.isInteger(rules.remissionHba1cMinDaysAfterStop) || rules.remissionHba1cMinDaysAfterStop < 0) {
+    problems.push("จำนวนวันที่ต้องตรวจ HbA1c หลังหยุดยาต้องเป็นจำนวนเต็มตั้งแต่ 0");
+  }
   if (!Number.isInteger(rules.staleDataDays) || rules.staleDataDays < 1) {
     problems.push("จำนวนวันที่ถือว่าข้อมูลเก่าต้องเป็นจำนวนเต็มตั้งแต่ 1");
   }
   return problems;
+}
+
+/** ชื่อเกณฑ์ที่ค่าต่างกันระหว่างสองชุด ใช้กันการบันทึกเวอร์ชันซ้ำโดยไม่มีการเปลี่ยนแปลง และเก็บใน audit log */
+export function changedRuleFields(before: RiskRules, after: RiskRules): (keyof RiskRules)[] {
+  return (Object.keys(after) as (keyof RiskRules)[]).filter((key) => before[key] !== after[key]);
 }

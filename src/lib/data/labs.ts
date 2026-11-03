@@ -105,7 +105,7 @@ export async function saveLabCore(
     select: { id: true, recordedDate: true, sbp: true, dbp: true, voidedAt: true },
   });
 
-  const { current } = await recomputeRisk(tx, input.patientId, active, today, { labRecordId: rec.id });
+  const { level } = await recomputeRisk(tx, input.patientId, active, today, { labRecordId: rec.id });
   const alertsCreated = await createBloodPressureAlert(tx, input.patientId, toBloodPressureInput(rec), active.rules, recordedOn);
   const newAlertTotal = await tx.alert.count({ where: { status: "NEW" } });
 
@@ -116,7 +116,7 @@ export async function saveLabCore(
     },
   });
 
-  return { recordId: rec.id, levelBefore: before?.level ?? null, levelAfter: current.level, alertsCreated, newAlertTotal };
+  return { recordId: rec.id, levelBefore: before?.level ?? null, levelAfter: level, alertsCreated, newAlertTotal };
 }
 
 export async function saveLabRecord(raw: unknown): Promise<SaveLabResult> {

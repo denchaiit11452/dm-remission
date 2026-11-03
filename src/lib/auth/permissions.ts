@@ -11,3 +11,14 @@ export const RECORD_MANAGER_ROLES = ["ADMIN", "DOCTOR"] as const satisfies reado
 export function canManageRecords(role: Role): boolean {
   return (RECORD_MANAGER_ROLES as readonly Role[]).includes(role);
 }
+
+/** ยืนยันว่าผู้ป่วยไม่เคยใช้ยาเบาหวาน เป็นการตัดสินทางคลินิก จึงทำได้เฉพาะแพทย์ (โรงพยาบาลยืนยันแล้ว) */
+export const NO_DRUG_CONFIRMER_ROLES = ["DOCTOR"] as const satisfies readonly Role[];
+
+/** แก้เกณฑ์ความเสี่ยงและ Remission ได้เฉพาะผู้ดูแลระบบและแพทย์ */
+export const RULE_MANAGER_ROLES = ["ADMIN", "DOCTOR"] as const satisfies readonly Role[];
+
+/** ใช้ซ่อนปุ่มเท่านั้น การตรวจสิทธิ์จริงต้องทำที่ requireRole(...NO_DRUG_CONFIRMER_ROLES) */
+export function canConfirmNoDrug(role: Role): boolean {
+  return (NO_DRUG_CONFIRMER_ROLES as readonly Role[]).includes(role);
+}

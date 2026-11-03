@@ -23,6 +23,13 @@ export async function getActiveRuleSet(db: Tx | Prisma.DefaultPrismaClient): Pro
   return { id: row.id, version: row.version, rules: toRiskRules(row) };
 }
 
+export type RecomputeResult = {
+  current: CurrentRisk;
+  assessmentId: string | null;
+  level: CurrentRisk["level"];
+  overrideKept: boolean;
+};
+
 const GLUCOSE_SELECT = {
   id: true, measuredDate: true, period: true, valueMgDl: true, meterFlag: true, voidedAt: true,
 } as const;
@@ -31,8 +38,10 @@ const LAB_SELECT = { id: true, recordedDate: true, sbp: true, dbp: true, voidedA
 /**
  * ประเมินระดับความเสี่ยงปัจจุบันของผู้ป่วยใหม่ แล้วเพิ่มแถวใน risk_assessments (ไม่เขียนทับของเดิม)
  * ใช้ตามกติกา: ค่าที่แย่ที่สุดของ "วันที่วัดล่าสุด" รวมกับความดันของ "วันที่ตรวจล่าสุด"
- * การเพิ่มแถว AUTO ใหม่ทำให้ Override ของแพทย์สิ้นสุดลง (ตามที่ตกลง: มีผลจนกว่าจะมีผลตรวจใหม่)
+ * การเพิ่มแถว AUTO ใหม่ทำให้ Override ของแพทย์สิ้นสุดลง จึงเพิ่มเมื่อยังไม่มี Override
+ * หรือเมื่อ trigger เป็นค่าน้ำตาลหรือความดันของวันล่าสุดเท่านั้น (โรงพยาบาลยืนยันแล้ว)
  * ถ้าไม่มีข้อมูลเหลือให้ประเมิน (level = null) จะไม่สร้างแถวใหม่
+ * level = ระดับที่มีผลหลังประเมิน (ระดับที่แพทย์ปรับไว้ ถ้า Override ยังมีผล)
  */
 export async function recomputeRisk(
   tx: Tx,
@@ -40,7 +49,7 @@ export async function recomputeRisk(
   active: ActiveRuleSet,
   today: string,
   trigger: { glucoseReadingId?: string; labRecordId?: string } = {},
-): Promise<{ current: CurrentRisk; assessmentId: string | null }> {
+): Promise<RecomputeResult> {
   const todayDate = dateFromKey(today);
 
   const latestGlucose = await tx.glucoseReading.findFirst({
@@ -83,7 +92,16 @@ export async function recomputeRisk(
     rules: active.rules,
     today,
   });
-  if (current.level === null) return { current, assessmentId: null };
+  if (current.level === null) return { current, assessmentId: null, level: null, overrideKept: false };
+
+  const latestAssessment = await tx.riskAssessment.findFirst({
+    where: { patientId }, orderBy: { createdAt: "desc" }, select: { level: true, source: true },
+  });
+  const isNewLatestData =
+    glucoseRows.some((r) => r.id === trigger.glucoseReadingId) || labRows.some((r) => r.id === trigger.labRecordId);
+  if (latestAssessment?.source === "OVERRIDE" && !isNewLatestData) {
+    return { current, assessmentId: null, level: latestAssessment.level, overrideKept: true };
+  }
 
   const detail = buildAssessmentDetail(current, glucoseInputs, active.rules, active.version);
   const row = await tx.riskAssessment.create({
@@ -99,7 +117,7 @@ export async function recomputeRisk(
     },
     select: { id: true },
   });
-  return { current, assessmentId: row.id };
+  return { current, assessmentId: row.id, level: current.level, overrideKept: false };
 }
 
 async function createAlerts(tx: Tx, patientId: string, decisions: AlertDecision[]): Promise<number> {

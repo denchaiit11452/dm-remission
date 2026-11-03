@@ -132,6 +132,43 @@ export const voidRecordSchema = z.object({
   reason: requiredText(500, "เหตุผลที่ยกเลิก"),
 });
 
+export const noDrugConfirmationSchema = z.object({
+  patientId: z.string().uuid("รหัสผู้ป่วยไม่ถูกต้อง"),
+  reason: requiredText(500, "เหตุผล"),
+});
+
+const ruleInt = (min: number, max: number, label: string) =>
+  z.number({ message: `กรุณากรอก${label}เป็นตัวเลข` })
+    .int(`${label}ต้องเป็นจำนวนเต็ม`)
+    .min(min, `${label}ต้องไม่ต่ำกว่า ${min}`)
+    .max(max, `${label}ต้องไม่เกิน ${max}`);
+const glucoseRule = (label: string) => ruleInt(GLUCOSE_ENTRY_LIMITS.min, GLUCOSE_ENTRY_LIMITS.max, label);
+/** ค่าว่าง (null) = แพทย์ยังไม่กำหนด ระบบจะข้ามระดับนั้น */
+const optionalGlucoseRule = (label: string) => glucoseRule(label).nullable();
+
+// ช่วงตัวเลขในสคีมานี้กันพิมพ์ผิดเท่านั้น ค่าเกณฑ์จริงเป็นการตัดสินของแพทย์
+export const saveRuleSetSchema = z.object({
+  /** เวอร์ชันที่ผู้ใช้เห็นตอนแก้ไข ใช้กันการเขียนทับเกณฑ์ที่ผู้อื่นเพิ่งเปลี่ยน */
+  baseVersion: z.number().int().min(0),
+  changeReason: requiredText(500, "เหตุผลที่เปลี่ยนเกณฑ์"),
+  goodMin: glucoseRule("ขอบล่างของควบคุมได้ดี"),
+  goodMax: glucoseRule("ขอบบนของควบคุมได้ดี"),
+  watchBelow: optionalGlucoseRule("เฝ้าระวังฝั่งต่ำ"),
+  watchAbove: optionalGlucoseRule("เฝ้าระวังฝั่งสูง"),
+  highBelow: optionalGlucoseRule("ความเสี่ยงสูงฝั่งต่ำ"),
+  highAbove: optionalGlucoseRule("ความเสี่ยงสูงฝั่งสูง"),
+  criticalGlucoseBelow: optionalGlucoseRule("วิกฤตฝั่งต่ำ"),
+  criticalGlucoseAbove: optionalGlucoseRule("วิกฤตฝั่งสูง"),
+  criticalSbp: ruleInt(LAB_LIMITS.sbp.min, LAB_LIMITS.sbp.max, "ความดันตัวบนวิกฤต"),
+  criticalDbp: ruleInt(LAB_LIMITS.dbp.min, LAB_LIMITS.dbp.max, "ความดันตัวล่างวิกฤต"),
+  remissionHba1cMax: z.number({ message: "กรุณากรอกเกณฑ์ HbA1c เป็นตัวเลข" })
+    .min(LAB_LIMITS.hba1c.min, `เกณฑ์ HbA1c ต้องไม่ต่ำกว่า ${LAB_LIMITS.hba1c.min}`)
+    .max(LAB_LIMITS.hba1c.max, `เกณฑ์ HbA1c ต้องไม่เกิน ${LAB_LIMITS.hba1c.max}`),
+  remissionMedFreeDays: ruleInt(0, 3650, "จำนวนวันที่หยุดยา"),
+  remissionHba1cMinDaysAfterStop: ruleInt(0, 3650, "จำนวนวันที่ตรวจ HbA1c หลังหยุดยา"),
+  staleDataDays: ruleInt(1, 365, "จำนวนวันที่ถือว่าข้อมูลเก่า"),
+});
+
 export type SaveGlucoseInput = z.output<typeof saveGlucoseSchema>;
 export type SaveLabInput = z.output<typeof saveLabSchema>;
 export type PatientInput = z.output<typeof patientSchema>;

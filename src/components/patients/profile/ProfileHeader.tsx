@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PRIMARY_BUTTON, SECONDARY_BUTTON } from "@/components/forms/fields";
 import RiskBadge, { StaleTag } from "@/components/patients/RiskBadge";
+import RemissionPanel, { REMISSION_STATUS_LABELS } from "@/components/patients/profile/RemissionPanel";
 import { GENDER_LABELS, PROGRAM_STATUS_LABELS, formatAgo, formatThaiDate } from "@/lib/format";
 import type { PatientSummary } from "@/lib/data/patients";
 import type { RiskLevel } from "@/lib/risk/types";
@@ -33,8 +34,8 @@ function medicationNote(r: PatientSummary["remission"]): string | null {
  * การ์ดหัวโปรไฟล์ผู้ป่วย
  * หมายเหตุ: ยังไม่มีปุ่ม "ปรับระดับความเสี่ยง" โดยตั้งใจ (เพิ่มพร้อมฟอร์ม Override)
  */
-export default function ProfileHeader({ summary, canManage }: { summary: PatientSummary; canManage: boolean }) {
-  const { patient, risk, remission, openAlertCount } = summary;
+export default function ProfileHeader({ summary, canManage, canConfirmNoDrug }: { summary: PatientSummary; canManage: boolean; canConfirmNoDrug: boolean }) {
+  const { patient, risk, remission, noDrugConfirmation, openAlertCount } = summary;
   const med = medicationNote(remission);
   const subtitle = [
     `HN ${patient.hn}`,
@@ -57,7 +58,7 @@ export default function ProfileHeader({ summary, canManage }: { summary: Patient
         </div>
       </header>
 
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-3 xl:grid-cols-5">
         <Field label="ระดับความเสี่ยงปัจจุบัน">
           <span className="flex flex-wrap items-center gap-2">
             <RiskBadge level={risk.level} />
@@ -65,9 +66,10 @@ export default function ProfileHeader({ summary, canManage }: { summary: Patient
           </span>
         </Field>
         <Field label="สถานะ Remission">
-          {PROGRAM_STATUS_LABELS[patient.programStatus]}
+          {REMISSION_STATUS_LABELS[remission.status]}
           {med ? <span className="font-normal text-slate-700"> ({med})</span> : null}
         </Field>
+        <Field label="สถานะโปรแกรม">{PROGRAM_STATUS_LABELS[patient.programStatus]}</Field>
         <Field label="ข้อมูลน้ำตาลล่าสุด">
           {risk.glucoseDate ? (
             <>
@@ -100,6 +102,8 @@ export default function ProfileHeader({ summary, canManage }: { summary: Patient
           <p className="mt-2 font-medium">แพทย์ปรับระดับเอง{risk.overrideReason ? `: ${risk.overrideReason}` : ""}</p>
         ) : null}
       </div>
+
+      <RemissionPanel patientId={patient.id} remission={remission} confirmation={noDrugConfirmation} canConfirm={canConfirmNoDrug} />
     </section>
   );
 }

@@ -141,6 +141,7 @@ model Profile {
   updatedAt    DateTime  @updatedAt
 
   patientsCreated        Patient[]         @relation("PatientCreatedBy")
+  patientsNoDrugConfirmed Patient[]        @relation("NoDrugConfirmedBy")
   locationsConsentBy     PatientLocation[] @relation("LocationConsentBy")
   locationsUpdatedBy     PatientLocation[] @relation("LocationUpdatedBy")
   glucoseCreated         GlucoseReading[]  @relation("GlucoseCreatedBy")
@@ -182,6 +183,12 @@ model Patient {
   programStatus           ProgramStatus @default(IN_PROGRAM)
   remissionStartedAt      DateTime?     @db.Date // วันที่เข้าสู่ภาวะสงบ (ถ้ามี)
   notes                   String?
+
+  // แพทย์ยืนยันว่าผู้ป่วยไม่เคยใช้ยาเบาหวาน จึงผ่านเงื่อนไขเรื่องยาของ Remission (ยังต้องมี HbA1c ผ่านเกณฑ์)
+  noDrugConfirmedAt       DateTime?
+  noDrugConfirmedById     String?       @db.Uuid
+  noDrugConfirmReason     String?
+  noDrugConfirmedBy       Profile?      @relation("NoDrugConfirmedBy", fields: [noDrugConfirmedById], references: [id])
 
   deletedAt               DateTime?     // soft delete
   createdAt               DateTime      @default(now())
@@ -363,8 +370,9 @@ model RiskRuleSet {
   criticalDbp Int      @default(120)
 
   // เกณฑ์ Remission
-  remissionHba1cMax     Float @default(6.5) // HbA1c <= ค่านี้
+  remissionHba1cMax     Float @default(6.0) // HbA1c ต้องต่ำกว่าค่านี้ (เท่ากับค่านี้ไม่ผ่าน)
   remissionMedFreeDays  Int   @default(90)  // หยุดยาเบาหวานอย่างน้อยกี่วัน
+  remissionHba1cMinDaysAfterStop Int @default(7) // ผล HbA1c ต้องตรวจหลังวันหยุดยาอย่างน้อยกี่วัน
 
   // ข้อมูลเก่า: ถ้าวันที่วัดล่าสุดเก่ากว่านี้ ให้แสดงป้ายเตือนข้างระดับความเสี่ยง
   staleDataDays Int    @default(7)
@@ -385,7 +393,7 @@ model RiskRuleSet {
 /// ผลการประเมินความเสี่ยง เก็บเป็นประวัติ ไม่เขียนทับ
 /// ระดับปัจจุบันของผู้ป่วย = แถวล่าสุด (createdAt) ของผู้ป่วยคนนั้น
 /// - AUTO: ค่าที่แย่ที่สุดของน้ำตาลวันที่วัดล่าสุด รวมกับความดันล่าสุด
-/// - OVERRIDE: แพทย์ปรับ มีผลจนกว่าจะมีผลตรวจใหม่ (แล้วระบบสร้าง AUTO ใหม่)
+/// - OVERRIDE: แพทย์ปรับ มีผลจนกว่าจะมีค่าน้ำตาลหรือความดันใหม่ของวันล่าสุด (แล้วระบบสร้าง AUTO ใหม่)
 ///   การยกเลิก Override = สร้าง AUTO ใหม่
 model RiskAssessment {
   id           String           @id @default(uuid()) @db.Uuid

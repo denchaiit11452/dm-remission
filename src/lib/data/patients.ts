@@ -165,6 +165,8 @@ export type PatientSummary = {
     headline: AssessmentHeadline | null;
   };
   remission: RemissionAssessment;
+  /** คำยืนยันของแพทย์ว่าผู้ป่วยไม่เคยใช้ยาเบาหวาน */
+  noDrugConfirmation: { at: string; byName: string | null; reason: string | null } | null;
   openAlertCount: number;
   missingThresholds: GlucoseThresholdKey[];
   ruleSetMissing: boolean;
@@ -181,6 +183,7 @@ export async function getPatientSummary(id: string): Promise<PatientSummary | nu
     select: {
       id: true, hn: true, prefix: true, firstName: true, lastName: true, gender: true, birthDate: true,
       diabetesType: true, programStartDate: true, programStatus: true,
+      noDrugConfirmedAt: true, noDrugConfirmReason: true, noDrugConfirmedBy: { select: { fullName: true } },
       riskAssessments: { orderBy: { createdAt: "desc" }, take: 1, select: { level: true, source: true, reasons: true, overrideReason: true } },
       labRecords: { where: { voidedAt: null, hba1c: { not: null } }, select: { id: true, recordedDate: true, hba1c: true, voidedAt: true } },
       medications: { where: { voidedAt: null }, select: { startDate: true, endDate: true, isDiabetesDrug: true } },
@@ -203,6 +206,7 @@ export async function getPatientSummary(id: string): Promise<PatientSummary | nu
     })),
     asOf: today,
     rules,
+    neverMedicatedConfirmed: p.noDrugConfirmedAt !== null,
   });
 
   return {
@@ -225,6 +229,9 @@ export async function getPatientSummary(id: string): Promise<PatientSummary | nu
       headline: detail?.headline ?? null,
     },
     remission,
+    noDrugConfirmation: p.noDrugConfirmedAt
+      ? { at: p.noDrugConfirmedAt.toISOString(), byName: p.noDrugConfirmedBy?.fullName ?? null, reason: p.noDrugConfirmReason }
+      : null,
     openAlertCount: p._count.alerts,
     missingThresholds: findMissingThresholds(rules),
     ruleSetMissing,

@@ -21,7 +21,7 @@ describe("mappers", () => {
       id: "r", version: 1, isActive: true, goodMin: 80, goodMax: 140,
       watchBelow: null, watchAbove: null, highBelow: null, highAbove: 300,
       criticalGlucoseBelow: null, criticalGlucoseAbove: 400, criticalSbp: 180, criticalDbp: 120,
-      remissionHba1cMax: 6.5, remissionMedFreeDays: 90, staleDataDays: 7, alertOnHighRisk: false,
+      remissionHba1cMax: 6.0, remissionMedFreeDays: 90, remissionHba1cMinDaysAfterStop: 7, staleDataDays: 7, alertOnHighRisk: false,
       changeReason: null, createdAt: new Date(), createdById: "u",
     } as RiskRuleSet;
     const r = toRiskRules(row);

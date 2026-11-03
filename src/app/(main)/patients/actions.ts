@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { saveLabRecord } from "@/lib/data/labs";
 import { saveMedication, stopMedication, voidMedication } from "@/lib/data/medications";
+import { cancelNoDrugConfirmation, confirmNoDrug } from "@/lib/data/no-drug-confirmation";
 import { createPatient, updatePatient } from "@/lib/data/patient-store";
 import { voidGlucoseReading, voidLabRecord } from "@/lib/data/void-record";
 
@@ -47,4 +48,16 @@ export async function voidMedicationAction(raw: unknown) {
 
 export async function stopMedicationAction(raw: unknown) {
   return stopMedication(raw);
+}
+
+export async function confirmNoDrugAction(raw: unknown) {
+  const result = await confirmNoDrug(raw);
+  if (result.ok) revalidatePath(`/patients/${result.patientId}`);
+  return result;
+}
+
+export async function cancelNoDrugConfirmationAction(raw: unknown) {
+  const result = await cancelNoDrugConfirmation(raw);
+  if (result.ok) revalidatePath(`/patients/${result.patientId}`);
+  return result;
 }

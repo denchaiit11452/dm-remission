@@ -111,7 +111,7 @@ async function runVoid(raw: unknown, core: (tx: Tx, p: VoidParams) => Promise<Vo
         const active = await getActiveRuleSet(tx);
         return core(tx, {
           userId: user.id, id: parsed.data.id, reason: parsed.data.reason, now: new Date(),
-          recompute: async (patientId) => (await recomputeRisk(tx, patientId, active, today)).current.level,
+          recompute: async (patientId) => (await recomputeRisk(tx, patientId, active, today)).level,
         });
       },
       { timeout: 15_000 },

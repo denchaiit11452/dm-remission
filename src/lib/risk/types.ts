@@ -33,8 +33,11 @@ export type RiskRules = {
   /** ความดันวิกฤต: SBP >= criticalSbp หรือ DBP >= criticalDbp */
   criticalSbp: number;
   criticalDbp: number;
+  /** Remission: HbA1c ต้องต่ำกว่าค่านี้ (เท่ากับค่านี้ไม่ผ่าน) */
   remissionHba1cMax: number;
   remissionMedFreeDays: number;
+  /** Remission: ผล HbA1c ต้องตรวจหลังวันหยุดยาอย่างน้อยกี่วัน */
+  remissionHba1cMinDaysAfterStop: number;
   staleDataDays: number;
   alertOnHighRisk: boolean;
 };

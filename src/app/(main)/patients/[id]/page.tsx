@@ -5,7 +5,7 @@ import LabHistory from "@/components/patients/profile/LabHistory";
 import MedicationList from "@/components/patients/profile/MedicationList";
 import ProfileHeader from "@/components/patients/profile/ProfileHeader";
 import ProfileTabs, { PROFILE_TABS, parseTab } from "@/components/patients/profile/ProfileTabs";
-import { canManageRecords } from "@/lib/auth/permissions";
+import { canConfirmNoDrug, canManageRecords } from "@/lib/auth/permissions";
 import { requireUser } from "@/lib/auth/session";
 import { getDailyHistory } from "@/lib/data/history";
 import { listLabRecords } from "@/lib/data/labs";
@@ -39,7 +39,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
         ← กลับไปรายชื่อผู้ป่วย
       </Link>
 
-      <ProfileHeader summary={summary} canManage={canManage} />
+      <ProfileHeader summary={summary} canManage={canManage} canConfirmNoDrug={canConfirmNoDrug(user.role)} />
 
       <ProfileTabs patientId={id} active={tab} openAlertCount={summary.openAlertCount} />
 

@@ -22,6 +22,7 @@ export function toRiskRules(row: RiskRuleSet): RiskRules {
     criticalDbp: row.criticalDbp,
     remissionHba1cMax: row.remissionHba1cMax,
     remissionMedFreeDays: row.remissionMedFreeDays,
+    remissionHba1cMinDaysAfterStop: row.remissionHba1cMinDaysAfterStop,
     staleDataDays: row.staleDataDays,
     alertOnHighRisk: row.alertOnHighRisk,
   };

@@ -63,7 +63,7 @@ export async function saveGlucoseCore(
     );
   }
 
-  const { current } = await recomputeRisk(tx, input.patientId, active, today, { glucoseReadingId: created[0]?.id });
+  const { level } = await recomputeRisk(tx, input.patientId, active, today, { glucoseReadingId: created[0]?.id });
   const alertsCreated = await createGlucoseAlerts(tx, input.patientId, created.map(toGlucoseInput), active.rules, recordedOn);
   const newAlertTotal = await tx.alert.count({ where: { status: "NEW" } });
 
@@ -86,7 +86,7 @@ export async function saveGlucoseCore(
     savedCount: created.length,
     readingIds: created.map((c) => c.id),
     levelBefore: before?.level ?? null,
-    levelAfter: current.level,
+    levelAfter: level,
     alertsCreated,
     newAlertTotal,
   };

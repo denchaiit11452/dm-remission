@@ -27,16 +27,9 @@ export type RemissionAssessment = {
   onDiabetesMedication: boolean;
   /** จำนวนวันที่หยุดยาเบาหวานแล้ว (null = ไม่มีประวัติการหยุดยาให้นับ) */
   medFreeDays: number | null;
+  /** มีรายการยาเบาหวานในประวัติหรือไม่ (ถ้ามี แพทย์ยืนยันว่า "ไม่เคยใช้ยา" ไม่ได้) */
+  hasDiabetesDrugHistory: boolean;
   reasons: string[];
-};
-
-export type RemissionOptions = {
-  /**
-   * false (ค่าเริ่มต้น): ใช้ HbA1c ล่าสุดค่าเดียว ตรวจเมื่อไรก็ได้
-   * true: HbA1c ต้องตรวจ "หลังหยุดยาครบ" แล้วเท่านั้น ถึงจะยืนยัน Remission
-   * (รอแพทย์ตัดสินว่าใช้แบบไหน)
-   */
-  hba1cMustFollowMedFreePeriod?: boolean;
 };
 
 export type RemissionInput = {
@@ -44,17 +37,24 @@ export type RemissionInput = {
   medications: MedicationPeriodInput[];
   /** วันที่ประเมิน (วันนี้ตามเวลาไทย) */
   asOf: string;
-  rules: Pick<RiskRules, "remissionHba1cMax" | "remissionMedFreeDays">;
+  rules: Pick<RiskRules, "remissionHba1cMax" | "remissionMedFreeDays" | "remissionHba1cMinDaysAfterStop">;
+  /** แพทย์ยืนยันว่าไม่เคยใช้ยาเบาหวาน มีผลเฉพาะเมื่อไม่มีรายการยาเบาหวานในประวัติ */
+  neverMedicatedConfirmed?: boolean;
 };
 
+/** แสดงทศนิยมอย่างน้อย 1 ตำแหน่ง เพื่อไม่ให้ 6.0 แสดงเป็น 6 */
+function formatPercent(value: number): string {
+  return `${Number.isInteger(value) ? value.toFixed(1) : value}%`;
+}
+
 /**
- * เกณฑ์ Remission: HbA1c <= remissionHba1cMax และไม่ใช้ยาเบาหวานอย่างน้อย remissionMedFreeDays วัน
+ * เกณฑ์ Remission (โรงพยาบาลยืนยันแล้ว):
+ * HbA1c ล่าสุดต่ำกว่า remissionHba1cMax และหยุดยาเบาหวานครบ remissionMedFreeDays วัน
+ * โดยผล HbA1c ต้องตรวจหลังวันหยุดยาอย่างน้อย remissionHba1cMinDaysAfterStop วัน
+ * ผู้ป่วยที่ไม่เคยใช้ยา: แพทย์ยืนยันรายคนแทนเงื่อนไขเรื่องยา แต่ยังต้องมี HbA1c ผ่านเกณฑ์
  * ถ้าข้อมูลไม่พอจะยืนยัน คืน INSUFFICIENT_DATA แทนการเดา
  */
-export function assessRemission(
-  input: RemissionInput,
-  options: RemissionOptions = {},
-): RemissionAssessment {
+export function assessRemission(input: RemissionInput): RemissionAssessment {
   const { asOf, rules } = input;
   const reasons: string[] = [];
 
@@ -73,6 +73,7 @@ export function assessRemission(
         };
 
   // สถานะการใช้ยาเบาหวาน
+  const hasDiabetesDrugHistory = input.medications.some((m) => m.isDiabetesDrug);
   const drugPeriods = input.medications.filter((m) => m.isDiabetesDrug && m.startDate <= asOf);
   const onDiabetesMedication = drugPeriods.some((m) => m.endDate === null || asOf < m.endDate);
   const lastStopDate = maxDateKey(
@@ -86,6 +87,7 @@ export function assessRemission(
     latestHba1c,
     onDiabetesMedication,
     medFreeDays,
+    hasDiabetesDrugHistory,
     reasons,
   });
 
@@ -97,12 +99,22 @@ export function assessRemission(
     reasons.push("ยังไม่มีผล HbA1c");
     return result("INSUFFICIENT_DATA");
   }
-  if (latestHba1c.value > rules.remissionHba1cMax) {
-    reasons.push(`HbA1c ${latestHba1c.value}% สูงกว่า ${rules.remissionHba1cMax}%`);
+  const threshold = formatPercent(rules.remissionHba1cMax);
+  const hba1cText = formatPercent(latestHba1c.value);
+  if (latestHba1c.value >= rules.remissionHba1cMax) {
+    reasons.push(`HbA1c ${hba1cText} ไม่ต่ำกว่าเกณฑ์ ${threshold}`);
     return result("NOT_IN_REMISSION");
   }
-  if (medFreeDays === null) {
-    reasons.push("ไม่มีประวัติการหยุดยาเบาหวาน จึงยืนยันไม่ได้ว่าหยุดยาครบกำหนด");
+  if (lastStopDate === null || medFreeDays === null) {
+    if (!hasDiabetesDrugHistory && input.neverMedicatedConfirmed) {
+      reasons.push(`HbA1c ${hba1cText} (ต่ำกว่า ${threshold}) และแพทย์ยืนยันว่าไม่เคยใช้ยาเบาหวาน`);
+      return result("REMISSION");
+    }
+    reasons.push(
+      hasDiabetesDrugHistory
+        ? "ไม่มีประวัติการหยุดยาเบาหวาน จึงยืนยันไม่ได้ว่าหยุดยาครบกำหนด"
+        : "ไม่มีประวัติการใช้ยาเบาหวาน รอแพทย์ยืนยันว่าผู้ป่วยไม่เคยใช้ยา",
+    );
     return result("INSUFFICIENT_DATA");
   }
   if (medFreeDays < rules.remissionMedFreeDays) {
@@ -110,16 +122,12 @@ export function assessRemission(
     return result("NOT_IN_REMISSION");
   }
 
-  if (options.hba1cMustFollowMedFreePeriod && lastStopDate !== null) {
-    const earliestValidDate = addDays(lastStopDate, rules.remissionMedFreeDays);
-    if (latestHba1c.date < earliestValidDate) {
-      reasons.push(`HbA1c ล่าสุดตรวจก่อนหยุดยาครบ ${rules.remissionMedFreeDays} วัน ต้องตรวจซ้ำตั้งแต่วันที่ ${earliestValidDate}`);
-      return result("INSUFFICIENT_DATA");
-    }
+  const earliestValidDate = addDays(lastStopDate, rules.remissionHba1cMinDaysAfterStop);
+  if (latestHba1c.date < earliestValidDate) {
+    reasons.push(`HbA1c ล่าสุดตรวจก่อนหยุดยาครบ ${rules.remissionHba1cMinDaysAfterStop} วัน ต้องตรวจซ้ำตั้งแต่วันที่ ${earliestValidDate}`);
+    return result("INSUFFICIENT_DATA");
   }
 
-  reasons.push(
-    `HbA1c ${latestHba1c.value}% (ไม่เกิน ${rules.remissionHba1cMax}%) และหยุดยาเบาหวานแล้ว ${medFreeDays} วัน`,
-  );
+  reasons.push(`HbA1c ${hba1cText} (ต่ำกว่า ${threshold}) และหยุดยาเบาหวานแล้ว ${medFreeDays} วัน`);
   return result("REMISSION");
 }
