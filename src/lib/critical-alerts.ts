@@ -23,6 +23,10 @@ export const POLL_INTERVAL_MS = 15_000;
 /** ถามไม่สำเร็จติดกันกี่ครั้งจึงแจ้งว่าระบบเด้งเตือนใช้ไม่ได้ (15 วินาที x 4 = ประมาณ 1 นาที) */
 export const FAILURES_BEFORE_WARNING = 4;
 const MAX_SEEN = 500;
+/** จำนวนรายการสูงสุดที่เซิร์ฟเวอร์ส่งให้กล่องเตือน */
+export const CRITICAL_LIST_LIMIT = 100;
+/** หน้า login ทิ้งเครื่องหมายนี้ไว้ เพื่อให้หน้าแรกหลังเข้าสู่ระบบรู้ว่าต้องสรุปผู้ป่วยวิกฤตให้ดู (ไม่เก็บข้อมูลผู้ป่วย) */
+export const LOGIN_PENDING_KEY = "dm.critical.loginPending";
 
 /**
  * รับผลการถามครั้งล่าสุด:
@@ -38,6 +42,15 @@ export function applyPoll(state: WatcherState, incoming: CriticalAlertDTO[]): { 
   const fresh = incoming.filter((a) => !seen.has(a.id));
   const toShow = fresh.filter((a) => !a.enteredByMe).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   return { state: { baselined: true, seen: unique([...state.seen, ...ids]).slice(-MAX_SEEN) }, toShow };
+}
+
+/**
+ * ครั้งแรกหลังเข้าสู่ระบบ: แสดงทุกรายที่ยังไม่รับทราบ รวมรายที่ผู้ใช้กรอกเอง เรียงล่าสุดก่อน
+ * และจดทุกรายเป็นเห็นแล้ว เพื่อไม่ให้กล่องเตือนรายใหม่เด้งซ้ำรายเดิม
+ */
+export function applyLoginPoll(incoming: CriticalAlertDTO[]): { state: WatcherState; toShow: CriticalAlertDTO[] } {
+  const toShow = [...incoming].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return { state: { baselined: true, seen: unique(incoming.map((a) => a.id)).slice(-MAX_SEEN) }, toShow };
 }
 
 /** รายที่มีคนรับทราบไปแล้ว (หายจากรายการ) ให้เอาออกจากคิว และใช้ข้อมูลล่าสุดของรายที่ยังอยู่ */

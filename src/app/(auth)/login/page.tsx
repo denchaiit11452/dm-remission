@@ -1,3 +1,4 @@
+import LoginAlertMarker from "@/components/alerts/LoginAlertMarker";
 import LoginForm from "./LoginForm";
 import { parseLogoutReason, type LogoutReason } from "@/lib/auth/constants";
 import { getInitialLockoutStatus } from "./actions";
@@ -82,6 +83,7 @@ export default async function LoginPage({
 
   return (
     <div className="lp-root">
+      <LoginAlertMarker />
       <main className="lp-main">
         {/* ── Left Hero Section (Medical Photo + Brand Graphics) ────── */}
         <section className="lp-hero-section" aria-label="ข้อมูลแบรนด์ DM Remission">

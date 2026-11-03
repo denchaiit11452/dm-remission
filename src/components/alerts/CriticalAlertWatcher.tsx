@@ -4,10 +4,11 @@
 // ถามเซิร์ฟเวอร์ทุก 15 วินาที -> ถ้ามีรายใหม่ เด้งกล่องทับหน้าจอทันที + เสียงสั้น ๆ (ถ้าเบราว์เซอร์อนุญาต)
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  EMPTY_STATE, FAILURES_BEFORE_WARNING, POLL_INTERVAL_MS, applyPoll, mergeQueue, parseAlerts, parseState, reconcileQueue,
+  EMPTY_STATE, FAILURES_BEFORE_WARNING, LOGIN_PENDING_KEY, POLL_INTERVAL_MS, applyLoginPoll, applyPoll, mergeQueue, parseAlerts, parseState, reconcileQueue,
   type CriticalAlertDTO, type WatcherState,
 } from "@/lib/critical-alerts";
 import CriticalAlertDialog from "./CriticalAlertDialog";
+import CriticalLoginDialog from "./CriticalLoginDialog";
 
 const STATE_KEY = "dm.critical.watch";
 const MUTE_KEY = "dm.critical.mute";
@@ -18,12 +19,14 @@ function readMute(): boolean {
 
 export default function CriticalAlertWatcher() {
   const [queue, setQueue] = useState<CriticalAlertDTO[]>([]);
+  const [loginAlerts, setLoginAlerts] = useState<CriticalAlertDTO[]>([]);
   const [offline, setOffline] = useState(false);
   const [muted, setMuted] = useState(false);
   const state = useRef<WatcherState>(EMPTY_STATE);
   const failures = useRef(0);
   const inFlight = useRef(false);
   const stopped = useRef(false);
+  const loginPending = useRef(false);
   const audio = useRef<AudioContext | null>(null);
   const mutedRef = useRef(false);
   const baseTitle = useRef<string | null>(null);
@@ -64,10 +67,19 @@ export default function CriticalAlertWatcher() {
       const alerts = res.ok ? parseAlerts(await res.json().catch(() => null)) : null;
       if (!alerts) throw new Error("bad response");
       failures.current = 0; setOffline(false);
-      const { state: next, toShow } = applyPoll(state.current, alerts);
+      // ถ้าครั้งแรกถามไม่สำเร็จ เครื่องหมายยังอยู่ จึงสรุปให้เมื่อถามสำเร็จครั้งถัดไป
+      const isFirstAfterLogin = loginPending.current;
+      const { state: next, toShow } = isFirstAfterLogin ? applyLoginPoll(alerts) : applyPoll(state.current, alerts);
       state.current = next;
       try { window.sessionStorage.setItem(STATE_KEY, JSON.stringify(next)); } catch { /* ไม่เป็นไร */ }
-      setQueue((q) => mergeQueue(reconcileQueue(q, alerts), toShow));
+      if (isFirstAfterLogin) {
+        loginPending.current = false;
+        try { window.localStorage.removeItem(LOGIN_PENDING_KEY); } catch { /* ไม่เป็นไร */ }
+        setLoginAlerts(toShow);
+      } else {
+        setLoginAlerts((list) => reconcileQueue(list, alerts));
+        setQueue((q) => mergeQueue(reconcileQueue(q, alerts), toShow));
+      }
       if (toShow.length > 0) beep();
     } catch {
       failures.current += 1;
@@ -79,6 +91,7 @@ export default function CriticalAlertWatcher() {
 
   useEffect(() => {
     try { state.current = parseState(window.sessionStorage.getItem(STATE_KEY)); } catch { state.current = EMPTY_STATE; }
+    try { loginPending.current = window.localStorage.getItem(LOGIN_PENDING_KEY) === "1"; } catch { loginPending.current = false; }
     const m = readMute(); mutedRef.current = m; setMuted(m); // eslint-disable-line react-hooks/set-state-in-effect
     void poll();
     const t = setInterval(() => void poll(), POLL_INTERVAL_MS);
@@ -90,15 +103,16 @@ export default function CriticalAlertWatcher() {
 
   // แท็บที่ถูกพับอยู่: ให้ชื่อแท็บบอกว่ามีผู้ป่วยวิกฤต
   useEffect(() => {
-    if (queue.length > 0) {
+    if (queue.length + loginAlerts.length > 0) {
       if (baseTitle.current === null) baseTitle.current = document.title;
       document.title = `(วิกฤต) ${baseTitle.current}`;
     } else if (baseTitle.current !== null) {
       document.title = baseTitle.current; baseTitle.current = null;
     }
-  }, [queue.length]);
+  }, [queue.length, loginAlerts.length]);
 
   const close = useCallback(() => setQueue((q) => q.slice(1)), []);
+  const closeLogin = useCallback(() => setLoginAlerts([]), []);
   const toggleMute = useCallback(() => {
     const next = !mutedRef.current; mutedRef.current = next; setMuted(next);
     try { window.localStorage.setItem(MUTE_KEY, next ? "1" : "0"); } catch { /* ไม่เป็นไร */ }
@@ -106,7 +120,9 @@ export default function CriticalAlertWatcher() {
 
   return (
     <>
-      <CriticalAlertDialog queue={queue} muted={muted} onClose={close} onToggleMute={toggleMute} />
+      {/* รายใหม่ที่เข้ามาระหว่างเปิดกล่องสรุปจะรอคิว แล้วเด้งต่อเมื่อปิดกล่องสรุป */}
+      <CriticalLoginDialog alerts={loginAlerts} onClose={closeLogin} />
+      <CriticalAlertDialog queue={loginAlerts.length > 0 ? [] : queue} muted={muted} onClose={close} onToggleMute={toggleMute} />
       {offline ? (
         <p role="status" className="fixed bottom-20 left-4 z-40 max-w-sm rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950 shadow-md md:bottom-4">
           ระบบเด้งเตือนผู้ป่วยวิกฤตใช้ไม่ได้ชั่วคราว กรุณาตรวจหน้าการแจ้งเตือนด้วยตนเองเป็นระยะ

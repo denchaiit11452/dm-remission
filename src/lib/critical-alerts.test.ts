@@ -1,9 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_STATE, applyPoll, mergeQueue, parseAlerts, parseState, reconcileQueue, type CriticalAlertDTO } from "./critical-alerts";
+import { EMPTY_STATE, applyLoginPoll, applyPoll, mergeQueue, parseAlerts, parseState, reconcileQueue, type CriticalAlertDTO } from "./critical-alerts";
 
 const a = (id: string, o: Partial<CriticalAlertDTO> = {}): CriticalAlertDTO => ({
   id, patientId: "p" + id, patientName: "ชื่อ " + id, hn: "67" + id, summary: "น้ำตาลสูงจัด", measuredDate: "2026-10-15",
   createdAt: `2026-10-15T0${id.length}:00:00.000Z`, backdatedDays: 0, enteredByMe: false, ...o,
+});
+
+describe("applyLoginPoll", () => {
+  it("แสดงทุกรายเรียงล่าสุดก่อน รวมรายที่ผู้ใช้กรอกเอง", () => {
+    const r = applyLoginPoll([a("1"), a("333", { enteredByMe: true }), a("22")]);
+    expect(r.toShow.map((x) => x.id)).toEqual(["333", "22", "1"]);
+  });
+  it("รายที่สรุปแล้วไม่เด้งซ้ำ แต่รายใหม่หลังจากนั้นยังเด้ง", () => {
+    const { state } = applyLoginPoll([a("1"), a("22")]);
+    expect(applyPoll(state, [a("1"), a("22")]).toShow).toEqual([]);
+    expect(applyPoll(state, [a("1"), a("22"), a("333")]).toShow.map((x) => x.id)).toEqual(["333"]);
+  });
+  it("เข้าสู่ระบบซ้ำในแท็บเดิม: ไม่สนใจสถานะเดิมและแสดงรายที่ยังค้างอีกครั้ง", () => {
+    expect(applyLoginPoll([a("1")]).toShow.map((x) => x.id)).toEqual(["1"]);
+  });
+  it("ไม่มีรายการ: ไม่มีอะไรต้องแสดง", () => {
+    expect(applyLoginPoll([])).toEqual({ state: { baselined: true, seen: [] }, toShow: [] });
+  });
 });
 
 describe("applyPoll", () => {
