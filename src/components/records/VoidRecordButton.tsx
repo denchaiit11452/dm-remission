@@ -15,6 +15,8 @@ type Props = {
   summary: string;
   /** ยกเลิกแล้ว = ซ่อนปุ่ม */
   voided: boolean;
+  /** neutral: ใช้ในหน้าที่สงวนสีแดงไว้สำหรับค่าวิกฤต ส่วนกล่องยืนยันยังเป็นปุ่มอันตรายเหมือนเดิม */
+  tone?: "danger" | "neutral";
 };
 
 const ACTIONS = { glucose: voidGlucoseAction, lab: voidLabAction, medication: voidMedicationAction };
@@ -36,7 +38,7 @@ function outcomeText(alertsCancelled: number, levelAfter: RiskLevel | null): str
  * แถวที่ยกเลิกแล้วต้องยังแสดงคอมโพเนนต์นี้ (voided) เพราะ Next.js อาจรีเฟรชหน้าทันทีหลัง Server Action
  * เมื่อ session cookie เปลี่ยน ถ้าถอดออกจากแถว กล่องผลลัพธ์จะหายไปก่อนผู้ใช้ได้อ่าน
  */
-export default function VoidRecordButton({ kind, id, summary, voided }: Props) {
+export default function VoidRecordButton({ kind, id, summary, voided, tone = "danger" }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
@@ -71,7 +73,7 @@ export default function VoidRecordButton({ kind, id, summary, voided }: Props) {
   return (
     <>
       {voided ? null : (
-        <button type="button" onClick={() => setOpen(true)} className="inline-flex min-h-11 items-center text-sm font-medium text-[#991b1b] underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">
+        <button type="button" onClick={() => setOpen(true)} className={`inline-flex min-h-11 items-center text-sm font-medium ${tone === "neutral" ? "text-slate-800" : "text-[#991b1b]"} underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700`}>
           ยกเลิกรายการ
         </button>
       )}

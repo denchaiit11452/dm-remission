@@ -43,7 +43,7 @@ export type RemissionInput = {
 };
 
 /** แสดงทศนิยมอย่างน้อย 1 ตำแหน่ง เพื่อไม่ให้ 6.0 แสดงเป็น 6 */
-function formatPercent(value: number): string {
+export function formatPercent(value: number): string {
   return `${Number.isInteger(value) ? value.toFixed(1) : value}%`;
 }
 

@@ -10,7 +10,7 @@ import { requireUser } from "@/lib/auth/session";
 import { getDailyHistory } from "@/lib/data/history";
 import { listLabRecords } from "@/lib/data/labs";
 import { listMedications } from "@/lib/data/medications";
-import { getPatientSummary } from "@/lib/data/patients";
+import { getPatientSummary, loadRules } from "@/lib/data/patients";
 
 export const metadata = { title: "โปรไฟล์ผู้ป่วย | DM Remission" };
 
@@ -30,6 +30,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
 
   const data = tab === "history" ? await getDailyHistory(id, raw) : null;
   const labs = tab === "labs" ? await listLabRecords(id) : null;
+  const labRules = labs ? await loadRules() : null;
   const medications = tab === "medications" ? await listMedications(id) : null;
   const tabLabel = PROFILE_TABS.find((t) => t.key === tab)?.label ?? "";
 
@@ -53,8 +54,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
             goodMax={data.rules.goodMax}
             canManage={canManage}
           />
-        ) : labs ? (
-          <LabHistory patientId={id} rows={labs} canManage={canManage} />
+        ) : labs && labRules ? (
+          <LabHistory patientId={id} rows={labs} canManage={canManage} rules={labRules.rules} ruleSetMissing={labRules.ruleSetMissing} today={summary.today} />
         ) : medications ? (
           <MedicationList patientId={id} rows={medications} today={summary.today} canManage={canManage} />
         ) : (
