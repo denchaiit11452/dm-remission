@@ -22,8 +22,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: "overview", href: "/dashboard", label: "ภาพรวม", icon: "grid", roles: ALL, group: "main" },
   { key: "patients", href: "/patients", label: "ผู้ป่วย", icon: "users", roles: ALL, group: "main" },
   { key: "alerts", href: "/alerts", label: "การแจ้งเตือน", icon: "bell", roles: ALL, group: "main" },
-  // แพทย์นำเข้า CSV ไม่ได้ (ตามตารางสิทธิ์)
-  { key: "import", href: "/import", label: "นำเข้า CSV", icon: "upload", roles: ["ADMIN", "STAFF"], group: "main" },
+  // นำเข้า CSV: เฉพาะ Admin (โรงพยาบาลยืนยันแล้ว)
+  { key: "import", href: "/import", label: "นำเข้า CSV", icon: "upload", roles: ["ADMIN"], group: "main" },
   // พิกัดผู้ป่วยเห็นได้เฉพาะแพทย์และ Admin
   { key: "map", href: "/map", label: "แผนที่ผู้ป่วย", icon: "pin", roles: ["ADMIN", "DOCTOR"], group: "restricted" },
   // แก้เกณฑ์ความเสี่ยง: Admin และแพทย์
