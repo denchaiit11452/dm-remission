@@ -166,8 +166,7 @@ export default function GlucoseForm(props: GlucoseFormProps) {
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!canSave) return;
-    if (summary.criticalCount > 0) setStatus("confirming"); // ค่าวิกฤตต้องยืนยันก่อนเสมอ
-    else void doSave();
+    setStatus("confirming"); // ยืนยันก่อนบันทึกทุกครั้ง ส่วนค่าวิกฤตจะมีคำเตือนเพิ่มในกล่องยืนยัน
   }
 
   function resetForNext() {
@@ -189,7 +188,7 @@ export default function GlucoseForm(props: GlucoseFormProps) {
     ? savedAnnouncement(saved)
     : summary.filledCount === 0 ? "ยังไม่ได้กรอกค่า ปุ่มบันทึกยังกดไม่ได้" : `พร้อมบันทึก ${summary.filledCount} ค่า`;
 
-  const confirming = status === "confirming" || (status === "saving" && summary.criticalCount > 0 && !saved);
+  const confirming = status === "confirming" || (status === "saving" && !saved);
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5 pb-28 lg:pb-6">
@@ -316,7 +315,7 @@ export default function GlucoseForm(props: GlucoseFormProps) {
           {error ? (
             <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-950">
               <p>{error}</p>
-              {summary.canSave ? <button type="button" onClick={() => (summary.criticalCount > 0 ? setStatus("confirming") : void doSave())} className="gl-btn min-h-11 rounded-lg border border-red-400 bg-white px-4 font-medium">ลองใหม่</button> : null}
+              {summary.canSave ? <button type="button" onClick={() => setStatus("confirming")} className="gl-btn min-h-11 rounded-lg border border-red-400 bg-white px-4 font-medium">ลองใหม่</button> : null}
             </div>
           ) : null}
         </div>
@@ -345,7 +344,8 @@ export default function GlucoseForm(props: GlucoseFormProps) {
             <p className="text-slate-700">
               {saved ? `บันทึกโดย ${props.recorder.name} · ${formatThaiDate(saved.measuredDate)}`
                 : summary.criticalCount > 0 ? `มีค่าวิกฤต ${summary.criticalCount} ค่า · ระบบจะขอยืนยันก่อนบันทึก`
-                : summary.hasErrors ? "มีช่องที่กรอกไม่ถูกต้อง กรุณาแก้ไข" : "กรอกค่า DTX อย่างน้อย 1 ช่วง"}
+                : summary.hasErrors ? "มีช่องที่กรอกไม่ถูกต้อง กรุณาแก้ไข"
+                : summary.filledCount > 0 ? "ระบบจะขอยืนยันก่อนบันทึก" : "กรอกค่า DTX อย่างน้อย 1 ช่วง"}
             </p>
           </div>
           <span className="sr-only" id="gl-status-sr">{statusText}</span>

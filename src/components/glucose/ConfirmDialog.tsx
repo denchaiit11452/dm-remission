@@ -24,7 +24,7 @@ type Props = {
   onConfirm: () => void;
 };
 
-/** กล่องยืนยันก่อนบันทึกเมื่อมีค่าวิกฤต (บนมือถือเป็นแผ่นล่าง) */
+/** กล่องยืนยันก่อนบันทึกทุกครั้ง ถ้ามีค่าวิกฤตจะเตือนเพิ่ม (บนมือถือเป็นแผ่นล่าง) */
 export default function ConfirmDialog(p: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const backRef = useRef<HTMLButtonElement>(null);
