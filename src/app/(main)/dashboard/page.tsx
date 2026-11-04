@@ -81,7 +81,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
           </div>
 
           <div className={SPLIT_ROW}>
-            <MetricsPanel metrics={stats.metrics} comparisonLabel={stats.comparisonLabel} isCustomRange={range.preset === null} />
+            <MetricsPanel metrics={stats.metrics} dates={stats.metricDates} comparisonLabel={stats.comparisonLabel} isCustomRange={range.preset === null} />
             <SeverePatientsPanel severe={stats.severe} critical={stats.risk.critical} high={stats.risk.high} thresholdsIncomplete={stats.risk.severeThresholdsIncomplete} />
           </div>
         </>

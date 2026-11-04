@@ -226,7 +226,8 @@ The chart is honest about what it does not know. Old data looks faded rather tha
 The palette is teal and slate for structure, with a red-to-green clinical scale carrying all risk meaning.
 
 ### Primary
-- **Deep Clinical Teal** (#115e59): Selected range presets, the custom-range trigger, calendar endpoints, the picker's apply button, the remission series in charts, and the sparkline end dot.
+- **Deep Clinical Teal** (#115e59): Selected range presets, the custom-range trigger, calendar endpoints, the picker's apply button, the remission series and metric lines in charts, and the systolic pressure line.
+- **Diastolic Teal** (#2a9d8f): The diastolic pressure line only, always beside a written key.
 - **Teal Hover** (#0f4f4b): Hover on the picker's apply button.
 - **Range Tint** (#d9ebe8): Days between the two selected calendar endpoints.
 - **Action Teal** (Tailwind teal-800): Shared form buttons and all teal text links. It renders almost identically to Deep Clinical Teal but is a separate value.
@@ -248,7 +249,7 @@ Fills are used for bars, swatches, and chart lines. Each badge pairs a pale back
 - **Uncontrolled Amber** (#d97706): The uncontrolled bar and the at-risk lab band.
 - **Controlled Green** (#15803d): The well-controlled bar and the normal lab band.
 - **No-Data Slate** (#94a3b8): The no-data bar and the insufficient-data remission segment.
-- **Not-In-Remission Slate** (#64748b): The not-in-remission segment and sparkline strokes.
+- **Not-In-Remission Slate** (#64748b): The not-in-remission segment.
 - **Bar Ink** (#0f172a): Percentages on the light fills: orange, amber, and no-data slate.
 - **Caution Amber** (Tailwind amber-50, amber-300, amber-950): The threshold banner's background, border, and text.
 - **Alert Count Red** (Tailwind red-600): The unacknowledged count pill on the sidebar and bottom navigation.
@@ -304,7 +305,7 @@ Page content sits in a centred column up to 1280px wide, with 16px gutters on mo
 
 Dashboard sections stack with a steady 20px gap. Paired panels share a row from 1200px up, with a flexible left column and a fixed 400px right column, and both panels stretch to equal height. Below 1200px they stack in one column. The summary strip is four cells from 1024px and two by two below that.
 
-On phones the rows reflow rather than scroll sideways. A risk row places its badge and count on one line and its bar below. The metrics table collapses its values into the first column beside a sparkline. Range presets fill a three-column control.
+On phones the rows reflow rather than scroll sideways. A risk row places its badge and count on one line and its bar below. Metric tiles stack in one column. Range presets fill a three-column control.
 
 Spacing inside a panel is 16px between blocks, with 16px padding on mobile and 20px from 768px. List rows use 10px of vertical padding and a hairline between them.
 
@@ -350,18 +351,19 @@ The app's most repeated element, and the carrier of the Label Carries It Rule.
 - **Stale tag:** A sibling tag, white with a slate-500 stroke, saying "ข้อมูลเก่า N วัน" or "ไม่มีค่าน้ำตาล".
 
 ### Risk Level Row (Signature)
-The system's signature: a row reading badge, bar, count, and stale count.
+The system's signature: a row reading badge, bar with its count at the tip, stale count, and chevron.
 - **Bar:** 18px tall, scaled to the largest level, with a fresh segment and a faded stale segment per the Faded Stale Rule.
-- **Awaiting threshold:** The bar is replaced by "รอแพทย์กำหนดเกณฑ์" and both counts become a dash.
-- **True zero:** The bar space stays empty and the count shows 0.
-- **Behaviour:** The whole row is a link to the filtered patient list, with a Canvas hover.
-- **Legend:** A key under the rows explains "ข้อมูลล่าสุด" and "ข้อมูลเก่า".
+- **Awaiting threshold:** The bar is replaced by "รอแพทย์กำหนดเกณฑ์" and the count becomes a dash.
+- **True zero:** No bar is drawn and a muted 0 sits at the bar start.
+- **No data:** "ยังไม่มีข้อมูล" is not a risk level, so a hairline separates it from the five levels.
+- **Behaviour:** The whole row is a link to the filtered patient list, with a Canvas hover and a 2px chevron nudge.
+- **Legend:** One line under the rows explains the faded segment and links to the stale patient list.
 
 ### Segment Bar
 A 28px proportional bar for groups that sum to a whole, such as remission status and lab bands.
 - **Segments:** 4px radius, 2px gaps, and zero-count groups are not drawn.
 - **Labels:** A percentage appears only on segments of 15% or more. White or Bar Ink is chosen per fill.
-- **Companion list:** Every bar is followed by a list of swatch, written name, and count, so a narrow segment stays readable.
+- **Companion list:** Every bar is followed by its parts with swatch, written name, and count, so a narrow segment stays readable. Lab bands use three aligned columns that also carry the range, so HbA1c and FBS compare vertically.
 
 ### Cards / Containers
 - **Corner Style:** Softly rounded, 10px on dashboard panels and 12px on containers elsewhere in the app.
@@ -379,8 +381,9 @@ A status banner shown when clinical thresholds are incomplete. It uses the Cauti
 ### Charts
 Hand-drawn inline SVG, with fixed type size at any width.
 - **Trend chart:** 2px lines with round caps, a 10% teal area under the remission series, hairline gridlines, and direct value labels at the line ends.
-- **Sparkline:** A neutral slate line with a teal end dot, scaled per row, so it is always shown with its figures.
-- **Access:** Arrow keys step through points, a tooltip shows values, and a visually hidden table holds the data.
+- **Metric small multiples:** Five tiles divided by hairlines, each with its own labelled axis because the units differ, and HbA1c and FBS wider on the top row. HbA1c and FBS carry a 1px Critical Oxblood line at the diabetes band, with a written label. Pointing at any tile moves all five to the same date, and each large value changes to that date instead of opening a tooltip.
+- **Chart arrival:** The metric lines sweep left to right over 800ms when scrolled into view, with a one-shot ripple at the latest value. Risk bars and lab band bars use the same reveal over 600ms, with no ripple. All of them replay only when the data changes. The frame, axes, and figures never animate, and values do not count up, so no false number is ever on screen. Reduced motion gets a 200ms fade instead.
+- **Access:** Arrow keys step through points, values are shown on screen, and a visually hidden table holds the data.
 
 ### Date Range Picker
 A native dialog anchored to the range trigger. From 768px it is a 682px two-month popover. Below that it is a bottom sheet with one month, a grab handle, and a start and end summary. Selected endpoints use Deep Clinical Teal, the range between uses Range Tint, and today has a 1px teal ring. The header opens a month and year grid.

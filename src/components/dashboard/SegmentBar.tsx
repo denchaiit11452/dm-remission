@@ -23,7 +23,7 @@ export default function SegmentBar({ segments, label }: { segments: Segment[]; l
     return <div role="img" aria-label={`${label}: ยังไม่มีข้อมูล`} className="h-7 rounded bg-slate-100" />;
   }
   return (
-    <div role="img" aria-label={`${label}: ${summary}`} className="flex h-7 gap-0.5">
+    <div data-sweep role="img" aria-label={`${label}: ${summary}`} className="flex h-7 gap-0.5">
       {segments.filter((s) => s.count > 0).map((s) => {
         const share = s.count / total;
         return (

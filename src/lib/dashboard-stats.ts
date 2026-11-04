@@ -177,7 +177,17 @@ export type MetricRow = {
   baselineCoverage: number;
   /** ค่าที่ใช้วาดเส้นแนวโน้ม */
   points: (number | null)[];
+  /** จำนวนผู้ป่วยที่มีข้อมูล ณ แต่ละจุดของเส้น */
+  pointCoverage: number[];
+  /** ความดันตัวล่าง เส้นที่สองของแถวความดันโลหิตเท่านั้น */
+  secondaryPoints?: (number | null)[];
+  unit: string;
+  decimals: number;
+  /** เส้นอ้างอิงจาก LAB_BANDS ใช้อ่านประกอบกราฟเท่านั้น */
+  reference?: { value: number; label: string };
 };
+
+export type MetricDate = { date: string; label: string };
 
 export type SeverePatient = {
   id: string;
@@ -220,6 +230,8 @@ export type DashboardStats = {
   granularity: Granularity;
   trend: TrendPoint[];
   metrics: MetricRow[];
+  /** วันที่ของแต่ละจุดบนกราฟตัวชี้วัด มีเสมอแม้ยังไม่มีชุดเกณฑ์ */
+  metricDates: MetricDate[];
   comparisonLabel: string;
   severe: { rows: SeverePatient[]; total: number };
   /** วันแรกที่มีข้อมูล ใช้จำกัดการย้อนในปฏิทิน */
@@ -267,6 +279,7 @@ function buildMetrics(patients: DashboardPatient[], dates: string[], baseline: s
     const now = programMean(patients, key, asOf);
     const baselineMean = programMean(patients, key, baseline);
     const before = baselineMean.value;
+    const series = dates.map((date) => programMean(patients, key, date));
     return {
       key,
       label,
@@ -274,11 +287,18 @@ function buildMetrics(patients: DashboardPatient[], dates: string[], baseline: s
       change: now.value === null || before === null ? "-" : formatSigned(now.value - before, decimals),
       coverage: now.count,
       baselineCoverage: baselineMean.count,
-      points: dates.map((date) => programMean(patients, key, date).value),
+      points: series.map((point) => point.value),
+      pointCoverage: series.map((point) => point.count),
+      unit: unit.trim(),
+      decimals,
     };
   };
+  const diabetesLine = (band: "hba1c" | "fbs") => ({
+    value: LAB_BANDS[band].diabetesFrom,
+    label: `${LAB_BAND_LABELS.DIABETES} ${LAB_BANDS[band].ranges.DIABETES}`,
+  });
 
-  const sbp = single("sbp", "ความดันโลหิต", "", 0);
+  const sbp = single("sbp", "ความดันโลหิต", " mmHg", 0);
   const dbpNow = programMean(patients, "dbp", asOf).value;
   const dbpBefore = programMean(patients, "dbp", baseline).value;
   const sbpNow = programMean(patients, "sbp", asOf).value;
@@ -286,11 +306,16 @@ function buildMetrics(patients: DashboardPatient[], dates: string[], baseline: s
   const pressureChange = dbpNow !== null && dbpBefore !== null && sbp.change !== "-" ? `${sbp.change}/${formatSigned(dbpNow - dbpBefore, 0)}` : "-";
 
   return [
-    single("hba1c", "HbA1c", "%", 1),
-    single("fbs", "FBS", " mg/dL", 0),
+    { ...single("hba1c", "HbA1c", "%", 1), reference: diabetesLine("hba1c") },
+    { ...single("fbs", "FBS", " mg/dL", 0), reference: diabetesLine("fbs") },
     single("weightKg", "น้ำหนัก", " กก.", 1),
     single("bmi", "BMI", "", 1),
-    { ...sbp, latest: hasPressure ? `${sbpNow.toFixed(0)}/${dbpNow.toFixed(0)} mmHg` : "-", change: pressureChange },
+    {
+      ...sbp,
+      latest: hasPressure ? `${sbpNow.toFixed(0)}/${dbpNow.toFixed(0)} mmHg` : "-",
+      change: pressureChange,
+      secondaryPoints: dates.map((date) => programMean(patients, "dbp", date).value),
+    },
   ];
 }
 
@@ -363,6 +388,7 @@ export function buildDashboardStats(input: {
     granularity,
     trend,
     metrics: buildMetrics(patients, dates, comparison.date, range.to),
+    metricDates: dates.map((date) => ({ date, label: trendLabel(date, granularity, dates.length) })),
     comparisonLabel: comparison.label,
     severe: {
       rows: severePatients.slice(0, SEVERE_LIST_LIMIT).map((p) => ({
