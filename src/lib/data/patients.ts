@@ -28,7 +28,7 @@ export async function loadRules(): Promise<{ rules: RiskRules; ruleSetMissing: b
  * ถ้ายกเลิกข้อมูลจนไม่เหลือ recomputeRisk จะไม่สร้างแถวใหม่ แถวล่าสุดจึงเป็นผลเก่าที่ใช้ไม่ได้แล้ว
  * ต้องแสดงเป็น "ยังไม่มีข้อมูล" แทนการแสดงระดับเดิมเหมือนยังเป็นปัจจุบัน
  */
-function assessableDataCounts(today: string) {
+export function assessableDataCounts(today: string) {
   const todayDate = dateFromKey(today);
   return {
     glucoseReadings: {
