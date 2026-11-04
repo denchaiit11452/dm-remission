@@ -20,6 +20,15 @@ export default function RiskBadge({ level }: { level: RiskLevel | null }) {
   return <span className={`${BASE} ${STYLES[level]}`}>{RISK_LEVEL_LABELS[level]}</span>;
 }
 
+/** จำนวน Alert ที่ยังไม่มีผู้รับทราบของผู้ป่วยรายนี้ */
+export function AlertTag({ count }: { count: number }) {
+  return (
+    <span className="inline-flex items-center whitespace-nowrap rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white">
+      Alert ใหม่ {count}
+    </span>
+  );
+}
+
 /** ป้ายเตือนข้อมูลเก่า (ageDays = null แปลว่าไม่มีค่าน้ำตาลเลย) */
 export function StaleTag({ ageDays }: { ageDays: number | null }) {
   return (

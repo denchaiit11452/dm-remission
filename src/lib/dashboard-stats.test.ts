@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { presetRange } from "./dashboard-range";
 import {
-  buildDashboardStats, buildRemissionTimeline, labBandOf, LAB_BANDS, latestLabValue, remissionPhaseAt,
+  buildDashboardStats, buildRemissionTimeline, buildRiskRows, labBandOf, LAB_BANDS, latestLabValue, remissionPhaseAt,
   type DashboardLab, type DashboardPatient,
 } from "./dashboard-stats";
 import { DEFAULT_RISK_RULES } from "./risk/rules";
@@ -98,6 +98,25 @@ describe("latestLabValue", () => {
     expect(latestLabValue(labs, "hba1c", "2026-03-01")).toBe(8);
     expect(latestLabValue(labs, "hba1c", TODAY)).toBe(7.2);
     expect(latestLabValue(labs, "hba1c", "2025-01-01")).toBeNull();
+  });
+});
+
+describe("buildRiskRows", () => {
+  const rowOf = (rows: ReturnType<typeof buildRiskRows>, key: string) => rows.find((row) => row.key === key);
+
+  it("นับจำนวนและข้อมูลเก่าแยกตามระดับ โดยคนที่ไม่มีข้อมูลอยู่กลุ่ม NONE", () => {
+    const rows = buildRiskRows(
+      [{ level: "WATCH", isStale: true }, { level: "WATCH", isStale: false }, { level: null, isStale: false }],
+      DEFAULT_RISK_RULES,
+    );
+    expect(rowOf(rows, "WATCH")).toMatchObject({ count: 2, stale: 1, awaitingThreshold: false });
+    expect(rowOf(rows, "NONE")).toMatchObject({ count: 1, stale: 0, awaitingThreshold: false });
+  });
+
+  it("ระดับที่ยังไม่มีเกณฑ์และไม่มีผู้ป่วยแสดงว่ารอเกณฑ์ ส่วนระดับที่มีเกณฑ์เป็น 0 จริง", () => {
+    const rows = buildRiskRows([], DEFAULT_RISK_RULES);
+    expect(rowOf(rows, "CRITICAL")?.awaitingThreshold).toBe(true);
+    expect(rowOf(rows, "WELL_CONTROLLED")).toMatchObject({ count: 0, awaitingThreshold: false });
   });
 });
 

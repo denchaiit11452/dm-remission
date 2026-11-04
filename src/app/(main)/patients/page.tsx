@@ -2,8 +2,10 @@ import Link from "next/link";
 import { PRIMARY_BUTTON } from "@/components/forms/fields";
 import PatientCards from "@/components/patients/PatientCards";
 import PatientFilters from "@/components/patients/PatientFilters";
+import PatientListMotion from "@/components/patients/PatientListMotion";
 import PatientTable from "@/components/patients/PatientTable";
 import Pagination from "@/components/patients/Pagination";
+import "@/components/patients/patient-list.css";
 import ThresholdBanner from "@/components/patients/ThresholdBanner";
 import { canManageRecords } from "@/lib/auth/permissions";
 import { requireUser } from "@/lib/auth/session";
@@ -36,8 +38,7 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">ผู้ป่วย</h1>
           <p className="mt-1 text-sm text-slate-700">
-            {filtered ? `พบ ${result.total} ราย` : `ผู้ป่วยทั้งหมด ${result.total} ราย`}
-            <span className="md:hidden"> · เรียงตามระดับความเสี่ยง</span>
+            {filtered ? `พบ ${result.total} ราย` : `ผู้ป่วยทั้งหมด ${result.total} ราย`} เรียงจากเสี่ยงมากไปน้อย
           </p>
         </div>
         {canManageRecords(user.role) ? <Link href="/patients/new" className={`${PRIMARY_BUTTON} w-full sm:w-auto`}>+ เพิ่มผู้ป่วย</Link> : null}
@@ -49,17 +50,19 @@ export default async function Page({ searchParams }: { searchParams: SearchParam
         canOpenSettings={canOpenSettings}
       />
 
-      <PatientFilters query={query} />
+      <PatientFilters query={query} riskRows={result.riskRows} />
 
       {result.rows.length === 0 ? (
         <div className="rounded-xl border border-slate-200 bg-white px-4 py-10 text-center text-slate-700">
-          {filtered ? "ไม่พบผู้ป่วยที่ตรงกับเงื่อนไข ลองเปลี่ยนคำค้นหาหรือล้างตัวกรอง" : "ยังไม่มีผู้ป่วยในระบบ"}
+          <p>{filtered ? "ไม่พบผู้ป่วยที่ตรงกับเงื่อนไข ลองเปลี่ยนคำค้นหาหรือล้างตัวกรอง" : "ยังไม่มีผู้ป่วยในระบบ"}</p>
+          {filtered ? <Link href="/patients" scroll={false} className={`${PRIMARY_BUTTON} mt-4`}>ล้างตัวกรอง</Link> : null}
+          {!filtered && canManageRecords(user.role) ? <Link href="/patients/new" className={`${PRIMARY_BUTTON} mt-4`}>+ เพิ่มผู้ป่วย</Link> : null}
         </div>
       ) : (
-        <>
+        <PatientListMotion>
           <PatientTable rows={result.rows} />
           <PatientCards rows={result.rows} />
-        </>
+        </PatientListMotion>
       )}
 
       {result.total > 0 ? (

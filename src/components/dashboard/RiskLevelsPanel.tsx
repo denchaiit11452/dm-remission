@@ -17,11 +17,15 @@ const BAR_COLORS: Record<RiskRowKey, string> = {
 const STALE_OPACITY = 0.32;
 /** เว้นที่ให้จำนวนรายที่ปลายแท่ง แท่งที่ยาวที่สุดจึงไม่ดันตัวเลขตกขอบ */
 const COUNT_LABEL_WIDTH_PX = 72;
+/** ช้ากว่าแท่งอื่นในหน้า เพราะนี่คือจุดเด่นของแผง และเส้นโค้งนุ่มกว่าเพื่อให้เห็นแท่งงอกจริง */
+const BAR_DURATION_MS = 800;
+const BAR_STAGGER_MS = 60;
+const BAR_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
-function Count({ value }: { value: number | string }) {
+function Count({ value, tip = false }: { value: number | string; tip?: boolean }) {
   const muted = value === 0;
   return (
-    <span className={`shrink-0 whitespace-nowrap text-sm tabular-nums ${muted ? "font-medium text-slate-500" : "font-semibold text-slate-900"}`}>
+    <span data-tip={tip ? "" : undefined} className={`shrink-0 whitespace-nowrap text-sm tabular-nums ${muted ? "font-medium text-slate-500" : "font-semibold text-slate-900"}`}>
       {value}<span className="ml-1 text-[12.5px] font-normal text-slate-600">ราย</span>
     </span>
   );
@@ -50,9 +54,9 @@ function RiskBar({ row, max }: { row: RiskRow; max: number }) {
         style={{ width: `calc((100% - ${COUNT_LABEL_WIDTH_PX}px) * ${row.count / max})`, minWidth: 6 }}
       >
         {fresh > 0 ? <span className={`block min-w-1 ${row.stale === 0 ? "rounded-r" : ""}`} style={{ flexGrow: fresh, flexBasis: 0, backgroundColor: color }} /> : null}
-        {row.stale > 0 ? <span className="block min-w-1 rounded-r" style={{ flexGrow: row.stale, flexBasis: 0, backgroundColor: color, opacity: STALE_OPACITY }} /> : null}
+        {row.stale > 0 ? <span data-settle className="block min-w-1 rounded-r" style={{ flexGrow: row.stale, flexBasis: 0, backgroundColor: color, opacity: STALE_OPACITY }} /> : null}
       </span>
-      <Count value={row.count} />
+      <Count value={row.count} tip />
     </span>
   );
 }
@@ -80,7 +84,7 @@ function RiskRowLink({ row, max }: { row: RiskRow; max: number }) {
     <Link
       href={rowHref(row.key)}
       aria-label={rowLabel(row)}
-      className="group grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 rounded-md px-1 py-1.5 transition-colors duration-150 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-700 motion-reduce:transition-none md:grid-cols-[124px_minmax(0,1fr)_84px]"
+      className="group grid min-h-11 w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 rounded-md px-1 py-1.5 transition-colors duration-150 hover:bg-slate-50 active:bg-slate-100 active:duration-0 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-700 motion-reduce:transition-none md:grid-cols-[124px_minmax(0,1fr)_84px]"
     >
       <span className="min-w-0"><RiskBadge level={row.key === "NONE" ? null : row.key} /></span>
       <span className="order-3 col-span-2 min-w-0 md:order-none md:col-span-1"><RiskBar row={row} max={max} /></span>
@@ -100,9 +104,10 @@ export default function RiskLevelsPanel({ risk, total }: { risk: DashboardStats[
 
   return (
     <Panel title="ระดับความเสี่ยงทั้งโปรแกรม" subtitle={`ระดับปัจจุบันของผู้ป่วย ${total} ราย กดแถวเพื่อเปิดรายชื่อ`}>
-      <ArrivalGroup signature={signature} className="flex flex-1 flex-col gap-1">
-        <ul className="flex flex-col gap-1">
-          {levels.map((row) => <li key={row.key}><RiskRowLink row={row} max={max} /></li>)}
+      <ArrivalGroup signature={signature} durationMs={BAR_DURATION_MS} staggerMs={BAR_STAGGER_MS} easing={BAR_EASE} className="flex flex-1 flex-col gap-1">
+        {/* แถวกระจายเต็มความสูงของแผงข้างๆ จึงไม่เหลือช่องว่างก้อนใหญ่ */}
+        <ul className="flex flex-1 flex-col gap-1">
+          {levels.map((row) => <li key={row.key} className="flex flex-1"><RiskRowLink row={row} max={max} /></li>)}
         </ul>
         {/* ยังไม่มีข้อมูลไม่ใช่ระดับความเสี่ยง จึงแยกด้วยเส้นคั่น */}
         {noData ? <div className="border-t border-slate-200 pt-1"><RiskRowLink row={noData} max={max} /></div> : null}

@@ -22,9 +22,9 @@ export default function RemissionStatusPanel({ remission, total }: { remission: 
   return (
     <Panel title="สถานะ Remission" subtitle={`แยกจากระดับความเสี่ยง ผู้ป่วย ${total} ราย`}>
       <SegmentBar segments={segments} label="สัดส่วนสถานะ Remission" />
-      <ul>
+      <ul className="flex flex-1 flex-col">
         {segments.map((s) => (
-          <li key={s.key} className="flex items-center gap-2.5 border-t border-slate-200 py-2.5 text-sm">
+          <li key={s.key} className="flex flex-1 items-center gap-2.5 border-t border-slate-200 py-2.5 text-sm">
             <Swatch color={s.color} />
             <span className="min-w-0 flex-1 text-slate-700">{s.label}</span>
             <span className="font-semibold tabular-nums text-slate-900">{s.count} ราย</span>

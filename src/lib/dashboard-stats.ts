@@ -249,7 +249,8 @@ function thresholdsMissing(level: RiskRowKey, rules: RiskRules): boolean {
   return false;
 }
 
-function buildRiskRows(patients: DashboardPatient[], rules: RiskRules): RiskRow[] {
+/** นับผู้ป่วยรายระดับ ใช้ทั้งหน้าภาพรวมและแถบกรองในหน้ารายชื่อ จึงตัดสิน "รอแพทย์กำหนดเกณฑ์" เหมือนกัน */
+export function buildRiskRows(patients: ReadonlyArray<Pick<DashboardPatient, "level" | "isStale">>, rules: RiskRules): RiskRow[] {
   return RISK_ROW_ORDER.map((key) => {
     const group = patients.filter((p) => (p.level ?? "NONE") === key);
     return {

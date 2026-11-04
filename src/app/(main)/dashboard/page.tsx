@@ -61,29 +61,34 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
         </section>
       ) : (
         <>
-          <RangeFilter range={range} today={today} earliestDate={stats.earliestDate} />
+          {/* ส่วนบน: สถานะปัจจุบัน ไม่ขึ้นกับช่วงเวลาที่เลือก ผู้ป่วยรุนแรงอยู่ใกล้ระดับความเสี่ยงเพื่อให้พบได้เร็ว */}
           <SummaryStrip stats={stats} alertCount={alertCount} />
 
           <div className={SPLIT_ROW}>
-            <Panel title="แนวโน้มภาวะสงบ" subtitle={`จำนวนผู้ป่วย${granularityText} ${rangeText} คำนวณย้อนหลังด้วยเกณฑ์ปัจจุบัน`}>
-              {stats.trend.length > 0 ? (
-                <RemissionTrendChart points={stats.trend} />
-              ) : (
-                <p className="text-sm leading-relaxed text-slate-700">ยังไม่มีชุดเกณฑ์ที่ใช้งาน ระบบจึงยังไม่แสดงแนวโน้มนี้</p>
-              )}
-            </Panel>
-            <RemissionStatusPanel remission={stats.remission} total={stats.totalPatients} />
+            <RiskLevelsPanel risk={stats.risk} total={stats.totalPatients} />
+            <SeverePatientsPanel severe={stats.severe} critical={stats.risk.critical} high={stats.risk.high} thresholdsIncomplete={stats.risk.severeThresholdsIncomplete} />
           </div>
 
           <div className={SPLIT_ROW}>
-            <RiskLevelsPanel risk={stats.risk} total={stats.totalPatients} />
+            <RemissionStatusPanel remission={stats.remission} total={stats.totalPatients} />
             <LabBandsPanel bands={stats.bands} />
           </div>
 
-          <div className={SPLIT_ROW}>
-            <MetricsPanel metrics={stats.metrics} dates={stats.metricDates} comparisonLabel={stats.comparisonLabel} isCustomRange={range.preset === null} />
-            <SeverePatientsPanel severe={stats.severe} critical={stats.risk.critical} high={stats.risk.high} thresholdsIncomplete={stats.risk.severeThresholdsIncomplete} />
+          {/* ส่วนล่าง: ตัวกรองมีผลเฉพาะส่วนนี้ จึงวางคู่กับหัวข้อ */}
+          <div className="mt-3 flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
+            <h2 className="text-lg font-semibold text-slate-900">แนวโน้มตามช่วงเวลา</h2>
+            <RangeFilter range={range} today={today} earliestDate={stats.earliestDate} />
           </div>
+
+          <Panel title="แนวโน้มภาวะสงบ" subtitle={`จำนวนผู้ป่วย${granularityText} ${rangeText} คำนวณย้อนหลังด้วยเกณฑ์ปัจจุบัน`}>
+            {stats.trend.length > 0 ? (
+              <RemissionTrendChart points={stats.trend} />
+            ) : (
+              <p className="text-sm leading-relaxed text-slate-700">ยังไม่มีชุดเกณฑ์ที่ใช้งาน ระบบจึงยังไม่แสดงแนวโน้มนี้</p>
+            )}
+          </Panel>
+
+          <MetricsPanel metrics={stats.metrics} dates={stats.metricDates} comparisonLabel={stats.comparisonLabel} isCustomRange={range.preset === null} />
         </>
       )}
     </div>

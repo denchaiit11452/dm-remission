@@ -1,0 +1,52 @@
+/* การเคลื่อนไหวของหน้ารายชื่อผู้ป่วย: วาดครั้งเดียวตอนเปิดหน้า นอกนั้นตอบสนองการกระทำของผู้ใช้เท่านั้น */
+
+/* สันความเสี่ยงไหลจากแถวบนลงล่าง ส่วนข้อมูลเก่าเริ่มเป็นสีเต็มแล้วจางลง เหมือนแท่งในหน้าภาพรวม */
+@keyframes patient-spine-draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes patient-spine-settle { from { opacity: 1; } }
+@keyframes patient-spine-fade { from { opacity: 0; } }
+
+.patient-spine {
+  transform-origin: top;
+  animation: patient-spine-draw 160ms ease-out var(--spine-delay, 0ms) backwards;
+}
+.patient-spine[data-stale] {
+  animation:
+    patient-spine-draw 160ms ease-out var(--spine-delay, 0ms) backwards,
+    patient-spine-settle 450ms ease-out calc(var(--spine-delay, 0ms) + 500ms) backwards;
+}
+/* เล่นรอบเดียว แถวที่เข้ามาหลังกรองใช้การค่อยๆ ปรากฏแทน */
+[data-arrived] .patient-spine { animation: none; }
+
+/* แถบสัดส่วนเผยจากระดับรุนแรงไปหาเบา ก่อนสันความเสี่ยงเริ่มไหล */
+@keyframes patient-scale-sweep { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.patient-scale-bar { animation: patient-scale-sweep 560ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+.patient-scale-segment { transition: flex-grow 400ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease-out; }
+
+/* ระหว่างรอผลกรอง: เส้นวิ่งเหนือรายการ ข้อมูลเดิมยังอยู่แต่จางลง หน่วงไว้เพื่อไม่ให้กะพริบเมื่อโหลดเร็ว */
+@keyframes patient-progress { from { transform: translateX(-100%); } to { transform: translateX(350%); } }
+.patient-progress { opacity: 0; transition: opacity 120ms ease-out; }
+.patient-progress > span { animation: patient-progress 1100ms ease-in-out infinite; animation-play-state: paused; }
+form[data-pending] .patient-progress { opacity: 1; transition-delay: 150ms; }
+form[data-pending] .patient-progress > span { animation-play-state: running; }
+
+[data-patient-list] { transition: opacity 150ms ease-out; }
+section:has(form[data-pending]) [data-patient-list] { opacity: 0.55; transition-delay: 150ms; }
+
+/* ลดการเคลื่อนไหว: ไม่มีอะไรเคลื่อนที่ เหลือเพียงการค่อยๆ ปรากฏ */
+@media (prefers-reduced-motion: reduce) {
+  .patient-spine,
+  .patient-spine[data-stale] {
+    animation: patient-spine-fade 400ms ease-out var(--spine-delay, 0ms) backwards;
+    transition: none;
+  }
+  .patient-scale-bar { animation: patient-spine-fade 400ms ease-out backwards; }
+  .patient-scale-segment { transition: opacity 180ms ease-out; }
+  .patient-progress > span { width: 100%; animation: none; }
+}
+
+/* สั่งพิมพ์ต้องเห็นครบทันที */
+@media print {
+  .patient-spine,
+  .patient-spine[data-stale],
+  .patient-scale-bar { animation: none; }
+}

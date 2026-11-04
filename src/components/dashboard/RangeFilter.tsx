@@ -37,7 +37,8 @@ export default function RangeFilter({ range, today, earliestDate }: Props) {
 
   return (
     <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:gap-3" aria-busy={pending}>
-      <span id="trend-range-label" className="text-sm font-medium text-slate-800">ช่วงเวลาของแนวโน้ม</span>
+      {/* หัวข้อบนจอบอกอยู่แล้วว่าเป็นช่วงเวลาของแนวโน้ม ป้ายนี้เหลือไว้ให้โปรแกรมอ่านหน้าจอ */}
+      <span id="trend-range-label" className="sr-only">ช่วงเวลาของแนวโน้ม</span>
 
       <div role="group" aria-labelledby="trend-range-label" className="grid grid-cols-3 overflow-hidden rounded-lg border border-slate-200 bg-white md:inline-grid">
         {RANGE_PRESETS.map((preset) => {
@@ -68,7 +69,8 @@ export default function RangeFilter({ range, today, earliestDate }: Props) {
         <span className="font-medium">{formatThaiDate(range.from)} ถึง {formatThaiDate(range.to)}</span>
       </button>
 
-      <span role="status" className="text-[13px] text-slate-600">{pending ? "กำลังโหลดข้อมูลช่วงใหม่..." : ""}</span>
+      {/* อยู่ซ้ายของปุ่ม ข้อความโผล่แล้วปุ่มจึงไม่ขยับ */}
+      <span role="status" className="text-[13px] text-slate-600 empty:hidden md:order-first">{pending ? "กำลังโหลดข้อมูลช่วงใหม่..." : ""}</span>
 
       {pickerAnchor ? (
         <DateRangePicker

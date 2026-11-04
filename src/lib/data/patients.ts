@@ -3,6 +3,7 @@
 import type { DiabetesType, Gender, Prisma, ProgramStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth/session";
+import { buildRiskRows, type RiskRow } from "@/lib/dashboard-stats";
 import { toDateKey, todayInBangkok } from "@/lib/date";
 import { severity } from "@/lib/risk/levels";
 import { DEFAULT_RISK_RULES, findMissingThresholds, type GlucoseThresholdKey } from "@/lib/risk/rules";
@@ -71,6 +72,8 @@ export type ListPatientsResult = {
   page: number;
   pageSize: number;
   today: string;
+  /** จำนวนรายตามระดับ นับตามคำค้นและตัวกรองอื่น แต่ไม่นับตัวกรองระดับ จึงเห็นทุกระดับเสมอ */
+  riskRows: RiskRow[];
   /** เกณฑ์น้ำตาลที่แพทย์ยังไม่กำหนด (หน้าจอควรแสดงแถบเตือน) */
   missingThresholds: GlucoseThresholdKey[];
   ruleSetMissing: boolean;
@@ -126,8 +129,9 @@ export async function listPatients(params: ListPatientsParams = {}): Promise<Lis
     };
   });
 
-  if (params.level) rows = rows.filter((r) => (params.level === "NONE" ? r.level === null : r.level === params.level));
   if (params.staleOnly) rows = rows.filter((r) => r.isStale);
+  const riskRows = buildRiskRows(rows, rules);
+  if (params.level) rows = rows.filter((r) => (params.level === "NONE" ? r.level === null : r.level === params.level));
 
   // เรียง: ระดับรุนแรงก่อน (ไม่มีข้อมูลไว้ท้าย) แล้วตาม HN
   rows.sort((a, b) => {
@@ -142,6 +146,7 @@ export async function listPatients(params: ListPatientsParams = {}): Promise<Lis
   return {
     rows: rows.slice((page - 1) * pageSize, page * pageSize),
     total, page, pageSize, today,
+    riskRows,
     missingThresholds: findMissingThresholds(rules),
     ruleSetMissing,
   };

@@ -4,15 +4,15 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { PROGRAM_STATUS_LABELS } from "@/lib/format";
+import type { RiskRow } from "@/lib/dashboard-stats";
 import { buildPatientQueryString, hasActiveFilters, type PatientQuery } from "@/lib/patient-query";
-import { RISK_LEVEL_LABELS, RISK_LEVEL_ORDER } from "@/lib/risk/levels";
 import type { ProgramStatus } from "@prisma/client";
+import RiskScale from "./RiskScale";
 
 const FIELD =
   "min-h-11 w-full appearance-none rounded-[10px] border border-slate-300 bg-white text-[15px] text-slate-900 placeholder:text-slate-500 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-teal-700";
 
 const STATUS_OPTIONS = Object.keys(PROGRAM_STATUS_LABELS) as ProgramStatus[];
-const LEVEL_OPTIONS = [...RISK_LEVEL_ORDER].reverse(); // รุนแรงก่อน
 
 function Chevron() {
   return (
@@ -34,10 +34,10 @@ function SelectField({ label, value, onChange, children }: { label: string; valu
   );
 }
 
-export default function PatientFilters({ query }: { query: PatientQuery }) {
+export default function PatientFilters({ query, riskRows }: { query: PatientQuery; riskRows: RiskRow[] }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const [text, setText] = useState(query.q);
   const lastSent = useRef(query.q);
 
@@ -67,13 +67,15 @@ export default function PatientFilters({ query }: { query: PatientQuery }) {
     <form
       role="search"
       aria-label="ค้นหาและกรองผู้ป่วย"
+      aria-busy={isPending}
+      data-pending={isPending ? "" : undefined}
       onSubmit={(e) => {
         e.preventDefault();
         apply({ q: text.trim() });
       }}
       className="space-y-3"
     >
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto] min-[1440px]:grid-cols-[minmax(0,360px)_auto_auto_auto]">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
         <label className="relative block lg:col-span-1">
           <span className="sr-only">ค้นหา HN หรือชื่อ</span>
           <svg aria-hidden="true" viewBox="0 0 20 20" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-600" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -92,16 +94,7 @@ export default function PatientFilters({ query }: { query: PatientQuery }) {
           />
         </label>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:contents">
-          <SelectField label="ระดับความเสี่ยง" value={query.level ?? ""} onChange={(v) => apply({ level: (v || null) as PatientQuery["level"] })}>
-            <option value="">ระดับความเสี่ยง: ทั้งหมด</option>
-            {LEVEL_OPTIONS.map((l) => (
-              <option key={l} value={l}>
-                {RISK_LEVEL_LABELS[l]}
-              </option>
-            ))}
-            <option value="NONE">ยังไม่มีข้อมูล</option>
-          </SelectField>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:contents">
           <SelectField label="สถานะ" value={query.status ?? ""} onChange={(v) => apply({ status: (v || null) as ProgramStatus | null })}>
             <option value="">สถานะ: ทั้งหมด</option>
             {STATUS_OPTIONS.map((s) => (
@@ -117,18 +110,30 @@ export default function PatientFilters({ query }: { query: PatientQuery }) {
         </div>
       </div>
 
-      {hasActiveFilters(query) ? (
-        <button
-          type="button"
-          onClick={() => {
-            setText("");
-            apply({ q: "", level: null, status: null, staleOnly: false });
-          }}
-          className="min-h-11 text-sm font-medium text-teal-800 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
-        >
-          ล้างตัวกรอง
-        </button>
-      ) : null}
+      <RiskScale
+        rows={riskRows}
+        active={query.level}
+        onSelect={(level) => apply({ level })}
+        action={
+          hasActiveFilters(query) ? (
+            <button
+              type="button"
+              onClick={() => {
+                setText("");
+                apply({ q: "", level: null, status: null, staleOnly: false });
+              }}
+              className="min-h-11 px-2 text-sm font-medium text-teal-800 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+            >
+              ล้างตัวกรอง
+            </button>
+          ) : null
+        }
+      />
+
+      <div aria-hidden="true" className="patient-progress h-0.5 overflow-hidden rounded-full bg-slate-100">
+        <span className="block h-full w-1/4 rounded-full bg-teal-700" />
+      </div>
+      <p role="status" className="sr-only">{isPending ? "กำลังโหลด..." : ""}</p>
     </form>
   );
 }

@@ -303,7 +303,9 @@ The signed-in shell changes navigation by width. At 1440px and above it shows a 
 
 Page content sits in a centred column up to 1280px wide, with 16px gutters on mobile, 24px at tablet, and 32px from 1024px. Mobile content keeps 112px of bottom padding to clear the bottom bar.
 
-Dashboard sections stack with a steady 20px gap. Paired panels share a row from 1200px up, with a flexible left column and a fixed 400px right column, and both panels stretch to equal height. Below 1200px they stack in one column. The summary strip is four cells from 1024px and two by two below that.
+The dashboard has two parts in a fixed order. The first shows today's state and ignores the date range: summary strip, then risk levels beside severe patients, then remission status beside lab bands. The second shows change over time: a heading sharing a row with the range filter, then the remission trend and the metric charts at full width. The filter sits there because it scopes only that part.
+
+Dashboard sections stack with a steady 20px gap, with 32px above the second part's heading. Paired panels share a row from 1200px up, with a flexible left column and a fixed 400px right column, so the gutter stays on one line down the page. Both panels stretch to equal height, and their rows spread to fill it. Below 1200px they stack in one column. The summary strip is four cells from 1024px and two by two below that.
 
 On phones the rows reflow rather than scroll sideways. A risk row places its badge and count on one line and its bar below. Metric tiles stack in one column. Range presets fill a three-column control.
 
@@ -382,7 +384,9 @@ A status banner shown when clinical thresholds are incomplete. It uses the Cauti
 Hand-drawn inline SVG, with fixed type size at any width.
 - **Trend chart:** 2px lines with round caps, a 10% teal area under the remission series, hairline gridlines, and direct value labels at the line ends.
 - **Metric small multiples:** Five tiles divided by hairlines, each with its own labelled axis because the units differ, and HbA1c and FBS wider on the top row. HbA1c and FBS carry a 1px Critical Oxblood line at the diabetes band, with a written label. Pointing at any tile moves all five to the same date, and each large value changes to that date instead of opening a tooltip.
-- **Chart arrival:** The metric lines sweep left to right over 800ms when scrolled into view, with a one-shot ripple at the latest value. Risk bars and lab band bars use the same reveal over 600ms, with no ripple. All of them replay only when the data changes. The frame, axes, and figures never animate, and values do not count up, so no false number is ever on screen. Reduced motion gets a 200ms fade instead.
+- **Chart arrival:** The metric lines sweep left to right over 800ms when scrolled into view, with a one-shot ripple at the latest value. Lab band bars use the same reveal over 600ms, with no ripple. All of them replay only when the data changes.
+- **Risk bar arrival:** Bars grow from one baseline over 800ms, top row first, with the count riding the bar tip and always showing its real value. The stale segment starts at full colour and settles to 0.32 opacity, because the level has not changed, only the confidence in it. Pressing a row darkens it immediately.
+- **Reduced motion:** Nothing moves. Bars fade in one after another over 400ms each, and the stale segment still settles. The frame, axes, and figures never animate, and values do not count up, so no false number is ever on screen.
 - **Access:** Arrow keys step through points, values are shown on screen, and a visually hidden table holds the data.
 
 ### Date Range Picker
