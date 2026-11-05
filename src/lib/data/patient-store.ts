@@ -9,7 +9,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import type { SaveFailure } from "./glucose";
 import { dateFromKey } from "./mappers";
-import { patientSchema, toFieldErrors, updatePatientSchema, type PatientInput } from "./schemas";
+import { patientChangedValuesSchema, patientSchema, toFieldErrors, updatePatientSchema, type PatientInput } from "./schemas";
 
 export type SavePatientResult = { ok: true; id: string } | SaveFailure;
 
@@ -143,12 +143,18 @@ export async function updatePatient(raw: unknown): Promise<SavePatientResult> {
   if (dateFailure) return dateFailure;
 
   try {
-    const found = await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx): Promise<SavePatientResult> => {
       const existing = await tx.patient.findFirst({ where: { id, deletedAt: null } });
-      if (!existing) return false;
+      if (!existing) return { ok: false, error: "ไม่พบผู้ป่วยรายนี้" };
 
       const diff = changedFields(rowToFormValues(existing), inputToFormValues(input));
-      if (Object.keys(diff.after).length === 0) return true; // ไม่มีอะไรเปลี่ยน ไม่ต้องเขียน audit
+      if (Object.keys(diff.after).length === 0) return { ok: true, id }; // ไม่มีอะไรเปลี่ยน ไม่ต้องเขียน audit
+
+      const changedValues = patientChangedValuesSchema.safeParse(diff.after);
+      if (!changedValues.success) {
+        const f = toFieldErrors(changedValues.error);
+        return { ok: false, error: f.message, fieldErrors: f.fieldErrors };
+      }
 
       await tx.patient.update({ where: { id }, data: toPatientData(input) });
       await tx.auditLog.create({
@@ -158,9 +164,8 @@ export async function updatePatient(raw: unknown): Promise<SavePatientResult> {
           after: diff.after as Prisma.InputJsonValue,
         },
       });
-      return true;
+      return { ok: true, id };
     });
-    return found ? { ok: true, id } : { ok: false, error: "ไม่พบผู้ป่วยรายนี้" };
   } catch (e) {
     if (isUniqueViolation(e)) return HN_TAKEN;
     console.error("updatePatient failed", { name: (e as { name?: string }).name, code: (e as { code?: string }).code });

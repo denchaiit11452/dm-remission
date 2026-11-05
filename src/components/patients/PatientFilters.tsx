@@ -1,7 +1,7 @@
 "use client";
 
 // ตัวกรองรายชื่อผู้ป่วย: ค่าทั้งหมดเก็บใน URL (ส่งลิงก์ต่อหรือรีเฟรชแล้วยังอยู่)
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { PROGRAM_STATUS_LABELS } from "@/lib/format";
 import type { RiskRow } from "@/lib/dashboard-stats";
@@ -38,6 +38,8 @@ export default function PatientFilters({ query, riskRows }: { query: PatientQuer
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  // ไฮไลต์เลื่อนทันทีที่กด ไม่ต้องรอผลจากเซิร์ฟเวอร์ ถ้าโหลดไม่สำเร็จจะกลับเป็นค่าเดิมใน URL
+  const [level, setLevel] = useOptimistic(query.level);
   const [text, setText] = useState(query.q);
   const lastSent = useRef(query.q);
 
@@ -60,7 +62,10 @@ export default function PatientFilters({ query, riskRows }: { query: PatientQuer
   function apply(change: Partial<PatientQuery>) {
     const next = { ...query, ...change, page: 1 };
     lastSent.current = next.q;
-    startTransition(() => router.replace(`${pathname}${buildPatientQueryString(next)}`, { scroll: false }));
+    startTransition(() => {
+      setLevel(next.level);
+      router.replace(`${pathname}${buildPatientQueryString(next)}`, { scroll: false });
+    });
   }
 
   return (
@@ -73,10 +78,11 @@ export default function PatientFilters({ query, riskRows }: { query: PatientQuer
         e.preventDefault();
         apply({ q: text.trim() });
       }}
-      className="space-y-3"
+      className="@container relative flex flex-col gap-4 overflow-hidden rounded-xl border border-slate-200 bg-white p-4 md:p-5"
     >
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
-        <label className="relative block lg:col-span-1">
+      {/* คอลัมน์ต่อท้ายสร้างตามจำนวนลูก ปุ่มล้างตัวกรองจึงไม่ทิ้งช่องว่างตอนยังไม่แสดง และไม่ดันรายการลง */}
+      <div className="grid gap-3 lg:grid-flow-col lg:grid-cols-[minmax(0,1fr)] lg:auto-cols-auto">
+        <label className="relative block">
           <span className="sr-only">ค้นหา HN หรือชื่อ</span>
           <svg aria-hidden="true" viewBox="0 0 20 20" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-600" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <circle cx="9" cy="9" r="6" />
@@ -103,35 +109,38 @@ export default function PatientFilters({ query, riskRows }: { query: PatientQuer
               </option>
             ))}
           </SelectField>
-          <SelectField label="ข้อมูลเก่า" value={query.staleOnly ? "1" : ""} onChange={(v) => apply({ staleOnly: v === "1" })}>
-            <option value="">ข้อมูลเก่า: ทั้งหมด</option>
-            <option value="1">เฉพาะข้อมูลเก่า</option>
-          </SelectField>
-        </div>
-      </div>
-
-      <RiskScale
-        rows={riskRows}
-        active={query.level}
-        onSelect={(level) => apply({ level })}
-        action={
-          hasActiveFilters(query) ? (
+          {/* มือถือใช้ปุ่ม "สีจางคือข้อมูลเก่า" ที่ทำงานเหมือนกัน รายชื่อจึงขึ้นมาในจอแรกได้เร็วขึ้น */}
+          <div className="hidden sm:block">
+            <SelectField label="ข้อมูลเก่า" value={query.staleOnly ? "1" : ""} onChange={(v) => apply({ staleOnly: v === "1" })}>
+              <option value="">ข้อมูลเก่า: ทั้งหมด</option>
+              <option value="1">เฉพาะข้อมูลเก่า</option>
+            </SelectField>
+          </div>
+          {hasActiveFilters(query) ? (
             <button
               type="button"
               onClick={() => {
                 setText("");
                 apply({ q: "", level: null, status: null, staleOnly: false });
               }}
-              className="min-h-11 px-2 text-sm font-medium text-teal-800 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
+              className="min-h-11 justify-self-start whitespace-nowrap rounded-lg px-1 text-sm font-medium text-teal-800 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
             >
               ล้างตัวกรอง
             </button>
-          ) : null
-        }
+          ) : null}
+        </div>
+      </div>
+
+      <RiskScale
+        rows={riskRows}
+        active={level}
+        onSelect={(selected) => apply({ level: selected })}
+        staleOnly={query.staleOnly}
+        onToggleStale={() => apply({ staleOnly: !query.staleOnly })}
       />
 
-      <div aria-hidden="true" className="patient-progress h-0.5 overflow-hidden rounded-full bg-slate-100">
-        <span className="block h-full w-1/4 rounded-full bg-teal-700" />
+      <div aria-hidden="true" className="patient-progress absolute inset-x-0 bottom-0 h-0.5 overflow-hidden">
+        <span className="block h-full w-1/4 bg-teal-700" />
       </div>
       <p role="status" className="sr-only">{isPending ? "กำลังโหลด..." : ""}</p>
     </form>

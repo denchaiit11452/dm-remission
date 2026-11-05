@@ -1,5 +1,6 @@
 // สคีมาตรวจข้อมูลที่รับเข้ามาก่อนบันทึก (ไม่ต่อฐานข้อมูล ทดสอบได้)
 import { z } from "zod";
+import { PATIENT_FIELD_LIMITS } from "@/lib/patient-form";
 
 /**
  * ช่วงค่า DTX ที่รับได้ตอนกรอก: กันพิมพ์ผิดอย่างหยาบ (เช่น 85000) เท่านั้น ไม่ใช่เกณฑ์ทางคลินิก
@@ -89,23 +90,42 @@ const requiredText = (max: number, label: string) =>
 
 // ระบบไม่เก็บเลขบัตรประชาชน (โรงพยาบาลยืนยันแล้ว) ใช้ HN ระบุตัวผู้ป่วย
 // ไม่รับสถานะโปรแกรมโดยตั้งใจ เพราะเป็นผลการประเมิน Remission ไม่ใช่ข้อมูลทะเบียน
+// เบอร์ไม่ใช่ช่องบังคับ แต่ถ้ากรอกต้องครบจำนวนหลักพอดี
+// ยอมรับ "" ด้วย เพราะการแก้ไขที่ล้างเบอร์ออกจะส่งค่าว่างมาตรวจใน patientChangedValuesSchema
+const phoneNumber = (digits: number, label: string) =>
+  z.string().trim().regex(new RegExp(`^(\\d{${digits}})?$`), `${label}ต้องเป็นตัวเลข ${digits} หลัก`).nullish();
+
 export const patientSchema = z.object({
-  hn: z.string({ message: "กรุณากรอก HN" }).trim().min(1, "กรุณากรอก HN").max(30, "HN ยาวเกิน 30 ตัวอักษร"),
-  prefix: optionalText(30, "คำนำหน้า"),
-  firstName: requiredText(100, "ชื่อ"),
-  lastName: requiredText(100, "นามสกุล"),
+  hn: z.string({ message: "กรุณากรอก HN" }).trim().min(1, "กรุณากรอก HN").regex(/^\d+$/, "HN ต้องเป็นตัวเลขเท่านั้น").max(PATIENT_FIELD_LIMITS.hn, `HN ต้องไม่เกิน ${PATIENT_FIELD_LIMITS.hn} หลัก`),
+  prefix: optionalText(PATIENT_FIELD_LIMITS.prefix, "คำนำหน้า"),
+  firstName: requiredText(PATIENT_FIELD_LIMITS.firstName, "ชื่อ"),
+  lastName: requiredText(PATIENT_FIELD_LIMITS.lastName, "นามสกุล"),
   gender: z.enum(["MALE", "FEMALE", "OTHER"], { message: "เลือกเพศ" }).nullish(),
   birthDate: dateKey.nullish(),
-  phone: optionalText(30, "เบอร์โทรศัพท์"),
-  address: optionalText(500, "ที่อยู่"),
-  emergencyContactName: optionalText(200, "ชื่อผู้ติดต่อฉุกเฉิน"),
-  emergencyContactPhone: optionalText(30, "เบอร์ผู้ติดต่อฉุกเฉิน"),
+  phone: phoneNumber(PATIENT_FIELD_LIMITS.phone, "เบอร์โทรศัพท์"),
+  address: optionalText(PATIENT_FIELD_LIMITS.address, "ที่อยู่"),
+  emergencyContactName: optionalText(PATIENT_FIELD_LIMITS.emergencyContactName, "ชื่อผู้ติดต่อฉุกเฉิน"),
+  emergencyContactPhone: phoneNumber(PATIENT_FIELD_LIMITS.emergencyContactPhone, "เบอร์ผู้ติดต่อฉุกเฉิน"),
   diabetesType: z.enum(["TYPE1", "TYPE2", "OTHER", "UNKNOWN"], { message: "เลือกชนิดเบาหวาน" }).default("UNKNOWN"),
   diagnosedAt: dateKey.nullish(),
   programStartDate: dateKey.nullish(),
-  notes: optionalText(2000, "หมายเหตุ"),
+  notes: optionalText(PATIENT_FIELD_LIMITS.notes, "หมายเหตุ"),
 });
-export const updatePatientSchema = patientSchema.extend({ id: z.string().uuid("รหัสผู้ป่วยไม่ถูกต้อง") });
+
+/** ขีดจำกัดเดิมก่อนมีกฎ HN 7 ตัวและเบอร์ 10 หลัก ทะเบียนเก่าอาจยาวถึงเท่านี้ */
+const LEGACY_IDENTIFIER_MAX = 30;
+
+// ผู้ป่วยเก่าอาจมี HN หรือเบอร์ที่ไม่ตรงกฎใหม่ จึงรับไว้ก่อนเพื่อให้แก้ช่องอื่นได้
+// แล้วตรวจเฉพาะค่าที่เปลี่ยนด้วย patientChangedValuesSchema
+export const updatePatientSchema = patientSchema.extend({
+  id: z.string().uuid("รหัสผู้ป่วยไม่ถูกต้อง"),
+  hn: z.string({ message: "กรุณากรอก HN" }).trim().min(1, "กรุณากรอก HN").max(LEGACY_IDENTIFIER_MAX, `HN ยาวเกิน ${LEGACY_IDENTIFIER_MAX} ตัวอักษร`),
+  phone: optionalText(LEGACY_IDENTIFIER_MAX, "เบอร์โทรศัพท์"),
+  emergencyContactPhone: optionalText(LEGACY_IDENTIFIER_MAX, "เบอร์ผู้ติดต่อฉุกเฉิน"),
+});
+
+/** ค่าที่ถูกแก้ต้องตรงกฎใหม่เสมอ ใช้ตรวจเฉพาะช่องที่เปลี่ยนตอนแก้ไขผู้ป่วย */
+export const patientChangedValuesSchema = patientSchema.pick({ hn: true, phone: true, emergencyContactPhone: true }).partial();
 
 export const saveMedicationSchema = z
   .object({

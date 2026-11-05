@@ -1,11 +1,20 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import SaveCelebration from "./SaveCelebration";
 import "./save-toast.css";
 
 const VISIBLE_MS = 6000;
 
-type SaveMessage = { title: string; detail?: string };
+type SaveMessage = {
+  title: string;
+  detail?: string;
+  /**
+   * แสดงเป็น popup ฉลองแทนแถบแจ้งธรรมดา ใช้กับเหตุการณ์ที่น่ายินดีจริงเท่านั้น เช่น เพิ่มผู้ป่วยใหม่
+   * ห้ามใช้กับการบันทึกผลตรวจหรือยา เพราะค่าที่บันทึกอาจเป็นข่าวร้ายของผู้ป่วย
+   */
+  celebrate?: { name: string; nextHref: string; nextLabel: string };
+};
 type ShownMessage = SaveMessage & { id: number };
 
 const SaveToastContext = createContext<((message: SaveMessage) => void) | null>(null);
@@ -27,7 +36,7 @@ export function SaveToastProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!message) return;
+    if (!message || message.celebrate) return; // popup ฉลองนับเวลาเอง เพราะต้องเล่นแอนิเมชันออกก่อน
     const timer = setTimeout(() => setMessage(null), VISIBLE_MS);
     return () => clearTimeout(timer);
   }, [message]);
@@ -37,7 +46,9 @@ export function SaveToastProvider({ children }: { children: ReactNode }) {
       {children}
       {/* region อยู่ในหน้าตลอด เพื่อให้โปรแกรมอ่านหน้าจออ่านข้อความเมื่อ popup ขึ้น */}
       <div role="status" aria-live="polite">
-        {message ? (
+        {message?.celebrate ? (
+          <SaveCelebration key={message.id} id={message.id} title={message.title} detail={message.detail} {...message.celebrate} onDismiss={() => setMessage(null)} />
+        ) : message ? (
           <div key={message.id} className="save-toast fixed right-4 top-[max(1rem,env(safe-area-inset-top))] z-50 w-[min(26rem,calc(100vw-2rem))] rounded-xl border border-green-200 bg-green-50 p-4 text-green-950 shadow-lg">
             <div className="flex items-start gap-3">
               <svg viewBox="0 0 24 24" className="mt-0.5 size-6 shrink-0" fill="none" aria-hidden="true">

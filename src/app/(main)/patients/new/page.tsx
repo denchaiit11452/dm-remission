@@ -11,9 +11,12 @@ export const metadata = { title: "เพิ่มผู้ป่วย | DM Remi
 export default async function Page() {
   await requireRole(...RECORD_MANAGER_ROLES);
   return (
-    <div className="mx-auto max-w-4xl space-y-4">
+    <div className="mx-auto max-w-6xl space-y-4">
       <Link href="/patients" className={TEXT_LINK}>← กลับไปรายชื่อผู้ป่วย</Link>
-      <h1 className="text-2xl font-semibold text-slate-900">เพิ่มผู้ป่วย</h1>
+      <header>
+        <h1 className="text-2xl font-semibold text-slate-900">เพิ่มผู้ป่วย</h1>
+        <p className="mt-1 text-sm text-slate-700">กรอก HN ชื่อ และนามสกุลก็เพิ่มได้ ข้อมูลอื่นเติมภายหลังได้</p>
+      </header>
       <PatientForm initial={EMPTY_PATIENT_FORM} today={todayInBangkok()} cancelHref="/patients" />
     </div>
   );

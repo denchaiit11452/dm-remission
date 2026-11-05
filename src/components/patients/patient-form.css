@@ -1,0 +1,174 @@
+/* การเคลื่อนไหวของฟอร์มผู้ป่วย: เปิดหน้าเล่นครั้งเดียวที่แฟ้ม นอกนั้นตอบสนองการกระทำของผู้ใช้เท่านั้น */
+
+/* เปิดหน้า: สันแฟ้มลากจากบนลงล่าง แล้วแท็บ HN เลื่อนขึ้นจากหลังการ์ด */
+@keyframes chart-spine-draw { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes chart-tab-rise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.chart-spine {
+  transform-origin: top;
+  animation: chart-spine-draw 480ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  transition: background-color 280ms ease-out;
+}
+.chart-tab {
+  animation: chart-tab-rise 360ms cubic-bezier(0.22, 1, 0.36, 1) 240ms backwards;
+  transition: background-color 150ms ease-out;
+}
+.chart-tab[data-active] { background-color: #0b2f2d; }
+.chart-label[data-saved] .chart-spine { background-color: #5eead4; }
+
+/* สีของหมวดบอกตำแหน่ง: หมวดที่กำลังกรอกเข้มขึ้น หมวดที่มีช่องผิดเปลี่ยนไอคอนเป็นสีเดียวกับเครื่องหมายช่องจำเป็น
+   ใช้เฉพาะเฉดเขียวหัวเป็ด เพราะสีแดงถึงเขียวของระดับความเสี่ยงสงวนไว้สำหรับความหมายทางคลินิก */
+.pf-section { transition: border-color 150ms ease-out; }
+.pf-section-head { background-color: #eef6f5; transition: background-color 150ms ease-out; }
+.pf-section-icon { background-color: #115e59; transition: background-color 150ms ease-out; }
+.pf-section:focus-within { border-color: #115e59; }
+.pf-section:focus-within .pf-section-head { background-color: #d9ebe8; }
+.pf-section:has([aria-invalid="true"]) .pf-section-icon { background-color: #991b1b; }
+
+/* ค่าที่เพิ่งลงแฟ้มค่อย ๆ เผยจากซ้ายไปขวา เหมือนเขียนด้วยหมึก */
+@keyframes chart-ink { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.chart-ink { animation: chart-ink 280ms ease-out; }
+
+@keyframes chart-caret-blink { 50% { opacity: 0; } }
+.chart-caret { animation: chart-caret-blink 1s steps(1) infinite; }
+
+/* ไฮไลต์แถวที่ตรงกับช่องที่กำลังกรอก */
+.chart-row-slider {
+  opacity: 0;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1), height 240ms cubic-bezier(0.22, 1, 0.36, 1), opacity 120ms ease-out;
+}
+.chart-row-slider[data-on] { opacity: 1; }
+
+/* แถบช่องจำเป็น: เต็มเมื่อกรอก และถอยกลับเมื่อลบ */
+.chart-required-fill {
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.chart-required-fill[data-filled] { transform: scaleX(1); }
+
+/* บันทึกสำเร็จ: วงกลมและเครื่องหมายถูกวาดต่อกัน */
+@keyframes chart-stamp-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+.chart-stamp-ring,
+.chart-stamp-check { stroke-dasharray: 1; }
+.chart-stamp-ring { animation: chart-stamp-draw 340ms ease-out backwards; }
+.chart-stamp-check { animation: chart-stamp-draw 220ms ease-out 260ms backwards; }
+
+/* ระหว่างบันทึก: เส้นวิ่งตามขอบล่างของแฟ้ม หน่วงไว้เพื่อไม่ให้กะพริบเมื่อบันทึกเร็ว */
+@keyframes chart-progress { from { transform: translateX(-100%); } to { transform: translateX(400%); } }
+.chart-progress { opacity: 0; transition: opacity 120ms ease-out; }
+.chart-progress > span { animation: chart-progress 1100ms ease-in-out infinite; animation-play-state: paused; }
+.chart-label[data-saving] .chart-progress { opacity: 1; transition-delay: 150ms; }
+.chart-label[data-saving] .chart-progress > span { animation-play-state: running; }
+
+/* กล่องแจ้งช่องที่ต้องแก้: ตราสีแดงปั๊มลงบนแฟ้ม ทุกอย่างสะดุ้งพร้อมกันที่จังหวะกระแทก (280 ms ตรงกับ IMPACT_MS)
+   วาบแดงเกิดครั้งเดียวต่อการเปิด จึงไม่เข้าข่ายแสงกะพริบถี่ และทุกปุ่มกดได้ตั้งแต่กล่องเปิด
+   การสั่นของช่องอยู่ใน PatientForm เพราะต้องเล่นหลังกล่องปิด ไม่ใช่ตอนช่องถูกบังอยู่หลังฉากมืด */
+@keyframes pf-issues-slam {
+  0% { opacity: 0; transform: scale(1.18); animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.4); }
+  22% { opacity: 1; transform: none; }
+  44% { transform: none; }
+  50% { transform: translate(-9px, 3px) rotate(-0.8deg); }
+  58% { transform: translate(8px, -3px) rotate(0.7deg); }
+  66% { transform: translate(-6px, 2px) rotate(-0.4deg); }
+  76% { transform: translate(4px, -1px); }
+  88% { transform: translate(-2px, 0); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes pf-issues-sheet-slam {
+  0% { transform: translateY(100%); animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.4); }
+  22% { transform: translateY(-12px); }
+  44% { transform: translateY(0); }
+  52% { transform: translateY(-8px); }
+  62% { transform: translateY(2px); }
+  74% { transform: translateY(-4px); }
+  88% { transform: translateY(1px); }
+  100% { transform: none; }
+}
+@keyframes pf-issues-backdrop-flash {
+  0% { background-color: rgb(15 23 42 / 0); }
+  40% { background-color: rgb(15 23 42 / 0.5); }
+  46% { background-color: rgb(220 38 38 / 0.7); }
+  100% { background-color: rgb(15 23 42 / 0.5); }
+}
+@keyframes pf-issues-stamp {
+  0% { opacity: 0; transform: scale(3.2); filter: blur(8px); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  78% { opacity: 1; transform: scale(0.9); filter: blur(0); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+@keyframes pf-issues-mark-jolt {
+  0% { opacity: 0; transform: scale(0); }
+  30% { opacity: 1; transform: scale(1.3) rotate(-14deg); }
+  50% { transform: scale(0.92) rotate(10deg); }
+  72% { transform: scale(1.05) rotate(-6deg); }
+  100% { transform: none; }
+}
+@keyframes pf-issues-band-flash { from { background-color: #ef4444; } to { background-color: #b91c1c; } }
+@keyframes pf-issues-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(8px); } }
+@keyframes pf-issues-sheet-out { from { transform: none; } to { transform: translateY(100%); } }
+@keyframes pf-issues-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pf-issues-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes pf-issues-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes pf-issues-pop { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: none; } }
+@keyframes pf-issues-row-in { from { clip-path: inset(0 100% 0 0); transform: translateX(-12px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+
+.pf-issues[open] { animation: pf-issues-slam 640ms linear both; }
+/* ขอบจอแดงอยู่ถาวร จึงยังดูเป็นเหตุด่วนแม้เครื่องปิดอนิเมชัน */
+.pf-issues::backdrop { background-color: rgb(15 23 42 / 0.5); background-image: radial-gradient(ellipse at center, transparent 40%, rgb(185 28 28 / 0.55) 100%); }
+.pf-issues[open]::backdrop { animation: pf-issues-backdrop-flash 640ms ease-out both; }
+.pf-issues[data-state="exit"] { animation: pf-issues-out 150ms cubic-bezier(0.4, 0, 1, 1) both; }
+.pf-issues[data-state="exit"]::backdrop { animation: pf-issues-fade-out 150ms linear both; }
+
+.pf-issues-band { animation: pf-issues-band-flash 420ms ease-out 280ms backwards; }
+/* เส้นคู่ตามแบบตรายาง ตัวเอียงใช้ rotate แยกจาก transform ตราจึงเอียงเท่าเดิมตลอดการปั๊ม */
+.pf-issues-stamp { rotate: -2deg; box-shadow: inset 0 0 0 2px #b91c1c, inset 0 0 0 3px #ffffff; animation: pf-issues-stamp 180ms linear 100ms backwards; }
+.pf-issues-mark { transform-origin: 12px 12px; animation: pf-issues-mark-jolt 520ms ease-out 280ms backwards; }
+/* คลื่นแรงกระแทกสองชั้น ตัดอยู่ในแถบแดงเพื่อไม่ให้รบกวนรายการ */
+@keyframes pf-issues-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(5); } }
+.pf-issues-ripple { opacity: 0; transform-origin: 12px 12px; animation: pf-issues-ripple 700ms cubic-bezier(0.16, 1, 0.3, 1) 280ms backwards; }
+.pf-issues-ripple-late { animation-delay: 420ms; }
+
+.pf-issues-row { animation: pf-issues-row-in 280ms ease-out var(--row-delay, 0ms) backwards; transition: background-color 120ms ease-out, transform 100ms ease-out; }
+.pf-issues-row:active { transform: scale(0.99); }
+.pf-issues-row[data-picked] { background-color: #d9ebe8; }
+
+/* เครื่องหมายหน้ารายการตามหลังแถวเล็กน้อย กากบาทวาดทีละเส้น */
+.pf-issues-marker-pop { transform-origin: center; animation: pf-issues-pop 280ms cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--row-delay, 0ms) + 100ms) backwards; }
+.pf-issues-marker-draw { stroke-dasharray: 1; animation: pf-issues-draw 220ms ease-out calc(var(--row-delay, 0ms) + 100ms) backwards; }
+.pf-issues-marker-late { animation-delay: calc(var(--row-delay, 0ms) + 280ms); animation-duration: 110ms; }
+.pf-issues-marker-later { animation-delay: calc(var(--row-delay, 0ms) + 370ms); animation-duration: 110ms; }
+
+/* มือถือเป็นแผ่นล่าง: เลื่อนขึ้นและลงตามขอบจอ */
+@media (max-width: 639px) {
+  .pf-issues[open] { animation-name: pf-issues-sheet-slam; }
+  .pf-issues[data-state="exit"] { animation: pf-issues-sheet-out 200ms cubic-bezier(0.4, 0, 1, 1) both; }
+}
+
+/* แถบแฟ้มที่ตรึงบนจอแคบบังช่องได้ จึงเว้นระยะตอนเบราว์เซอร์เลื่อนไปหาช่องที่โฟกัส */
+@media (max-width: 1023px) {
+  .patient-form[data-has-label] :is(input, select, textarea) { scroll-margin-top: 11rem; }
+}
+
+/* ลดการเคลื่อนไหว: ไม่มีอะไรเคลื่อนที่ ข้อความและขอบสีแดงยังบอกข้อผิดพลาดครบ */
+@media (prefers-reduced-motion: reduce) {
+  @keyframes chart-fade { from { opacity: 0; } }
+  .chart-spine,
+  .chart-ink { animation: chart-fade 280ms ease-out; }
+  .chart-tab { animation: none; }
+  .chart-caret { animation: none; }
+  .chart-row-slider { transition: opacity 120ms ease-out; }
+  .chart-required-fill { transition: none; }
+  .chart-stamp-ring,
+  .chart-stamp-check { animation: none; stroke-dashoffset: 0; }
+  .chart-progress > span { width: 100%; animation: none; }
+  .pf-issues[open] { animation: pf-issues-fade 150ms linear both; }
+  .pf-issues[open]::backdrop { animation: pf-issues-fade 240ms ease-out both; }
+  .pf-issues[data-state="exit"] { animation: pf-issues-fade-out 100ms linear both; }
+  .pf-issues-band { animation: none; }
+  .pf-issues-stamp { animation: pf-issues-fade 200ms linear backwards; }
+  .pf-issues-mark { animation: none; }
+  .pf-issues-ripple { animation: none; }
+  .pf-issues-row { animation: pf-issues-fade 150ms linear backwards; transition: background-color 120ms ease-out; }
+  .pf-issues-row:active { transform: none; }
+  .pf-issues-marker-pop { animation: none; }
+  .pf-issues-marker-draw { animation: none; stroke-dashoffset: 0; }
+}

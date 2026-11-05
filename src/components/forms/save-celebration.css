@@ -1,0 +1,91 @@
+/* popup ฉลองการเพิ่มผู้ป่วยใหม่: ตราเขียวปั๊มลงแฟ้มแล้วทุกอย่างดีใจพร้อมกันที่จังหวะกระแทก (300 ms)
+   คู่ตรงข้ามของตราแดงใน patient-form.css เอียงคนละทิศ และกระโดดขึ้นแทนการสั่น
+   กระดาษสีเล่นจบในตัว ไม่วนซ้ำ และไม่รับการคลิก */
+
+/* ฉากหลังเรืองเขียวบาง ๆ ไม่มืด หน้าหลังจึงยังอ่านได้และคลิกผ่านได้ */
+.save-cel-wash { background: radial-gradient(ellipse at center, rgb(94 234 212 / 0.38), rgb(17 94 89 / 0.2) 70%); animation: save-cel-fade 260ms ease-out both; }
+@keyframes save-cel-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes save-cel-fade-out { from { opacity: 1; } to { opacity: 0; } }
+.save-cel[data-closing] { animation: save-cel-fade-out 200ms ease-in both; }
+
+/* กล่อง: เด้งขึ้นจนถึงจังหวะกระแทก แล้วกระโดดดีใจ */
+@keyframes save-cel-pop {
+  0% { opacity: 0; transform: scale(0.55); }
+  22% { opacity: 1; transform: scale(1.04); }
+  38% { transform: none; }
+  50% { transform: translateY(-16px) scale(1.02); }
+  64% { transform: none; }
+  74% { transform: translateY(-7px); }
+  88% { transform: none; }
+  100% { opacity: 1; transform: none; }
+}
+.save-cel-card { animation: save-cel-pop 780ms cubic-bezier(0.3, 0.7, 0.4, 1) both; }
+
+@keyframes save-cel-band-flash { from { background-color: #14b8a6; } to { background-color: #115e59; } }
+.save-cel-band { animation: save-cel-band-flash 480ms ease-out 300ms backwards; }
+
+/* ตรา: เส้นคู่แบบตรายาง เอียงด้วย rotate แยกจาก transform จึงเอียงเท่าเดิมตลอดการปั๊ม */
+@keyframes save-cel-stamp {
+  0% { opacity: 0; transform: scale(3); filter: blur(8px); animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45); }
+  78% { opacity: 1; transform: scale(0.9); filter: blur(0); }
+  100% { opacity: 1; transform: none; filter: none; }
+}
+.save-cel-stamp { rotate: 2deg; box-shadow: inset 0 0 0 2px #115e59, inset 0 0 0 3px #5eead4; animation: save-cel-stamp 190ms linear 110ms backwards; }
+
+/* เครื่องหมายถูก: วาดวงกับขีดให้จบตรงจังหวะกระแทก แล้วเด้งดีใจ */
+@keyframes save-cel-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes save-cel-mark-joy {
+  0%, 100% { transform: none; }
+  30% { transform: scale(1.28) rotate(-10deg); }
+  58% { transform: scale(0.94) rotate(6deg); }
+  80% { transform: scale(1.05); }
+}
+.save-cel-ring,
+.save-cel-check { stroke-dasharray: 1; }
+.save-cel-ring { animation: save-cel-draw 200ms ease-out 80ms backwards; }
+.save-cel-check { animation: save-cel-draw 120ms ease-out 240ms backwards; }
+.save-cel-mark { transform-origin: 12px 12px; animation: save-cel-mark-joy 560ms ease-out 360ms; }
+
+@keyframes save-cel-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(5); } }
+.save-cel-ripple { opacity: 0; transform-origin: 12px 12px; animation: save-cel-ripple 760ms cubic-bezier(0.16, 1, 0.3, 1) 300ms backwards; }
+.save-cel-ripple-late { animation-delay: 460ms; }
+
+/* กระดาษสี: แตกออกจากกลางกล่องตรงจังหวะกระแทก ชะลอที่จุดสูงสุด แล้วหมุนร่วงลงจนพ้นจอ */
+.save-cel-confetti { position: absolute; inset: 0; overflow: hidden; }
+.save-cel-piece { position: absolute; left: 50%; top: 42%; border-radius: 2px; opacity: 0; animation-name: save-cel-fly; animation-timing-function: linear; animation-fill-mode: both; }
+.save-cel-piece[data-shape="dot"] { border-radius: 9999px; }
+/* รูปกากบาทการแพทย์ */
+.save-cel-piece[data-shape="plus"] { border-radius: 0; clip-path: polygon(36% 0, 64% 0, 64% 36%, 100% 36%, 100% 64%, 64% 64%, 64% 100%, 36% 100%, 36% 64%, 0 64%, 0 36%, 36% 36%); }
+@keyframes save-cel-fly {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.2); animation-timing-function: cubic-bezier(0.1, 0.8, 0.2, 1); }
+  4% { opacity: 1; }
+  30% { opacity: 1; transform: translate(var(--x), var(--y)) rotate(var(--spin)) scale(1); animation-timing-function: cubic-bezier(0.4, 0, 0.8, 0.6); }
+  82% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(var(--x) + var(--drift)), calc(var(--y) + 72vh)) rotate(calc(var(--spin) * 3)) scale(1); }
+}
+/* จอแคบใช้กระดาษครึ่งเดียว ไม่ให้แน่นจนรก */
+@media (max-width: 639px) {
+  .save-cel-piece:nth-child(2n) { display: none; }
+}
+
+/* แถบเวลาที่เหลือก่อนปิดเอง */
+@keyframes save-cel-timer { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.save-cel-timer { transform-origin: left; animation-name: save-cel-timer; animation-timing-function: linear; animation-fill-mode: both; }
+
+/* ลดการเคลื่อนไหว: ไม่มีอะไรเคลื่อนที่ แต่ตรา สีเรือง และกระดาษสีที่วางนิ่งรอบกล่องยังให้ความรู้สึกฉลองครบ */
+@media (prefers-reduced-motion: reduce) {
+  .save-cel-card { animation: save-cel-fade 200ms linear both; }
+  .save-cel-band { animation: none; }
+  .save-cel-stamp { animation: save-cel-fade 240ms linear backwards; }
+  .save-cel-ring,
+  .save-cel-check { animation: none; stroke-dashoffset: 0; }
+  .save-cel-mark { animation: none; }
+  .save-cel-ripple { animation: none; }
+  .save-cel-piece {
+    opacity: 0.9;
+    transform: translate(var(--x), var(--y)) rotate(var(--spin));
+    animation: save-cel-fade 300ms linear both !important;
+  }
+  .save-cel-timer { animation-name: none; }
+  .save-cel[data-closing] { animation: save-cel-fade-out 120ms linear both; }
+}

@@ -4,7 +4,7 @@ import { PROGRAM_STATUS_LABELS, formatGlucoseValue, formatThaiDate, periodLabel 
 import RiskBadge, { AlertTag, StaleTag } from "./RiskBadge";
 import RiskSpine from "./RiskSpine";
 
-const TH = "border-b border-slate-200 px-4 py-3 text-left text-sm font-semibold text-slate-800";
+const TH = "border-b border-slate-200 px-4 py-2.5 text-left text-[12.5px] font-medium text-slate-600";
 // ใช้เส้นคั่นที่เซลล์แทนแถว เพราะเส้นแบบ collapse ไม่ขยับตามแถวตอนเลื่อนตำแหน่ง
 const TD = "border-b border-slate-200 px-4 py-3 align-middle text-[15px] text-slate-900 group-last:border-b-0";
 
