@@ -12,24 +12,25 @@
   animation: chart-tab-rise 360ms cubic-bezier(0.22, 1, 0.36, 1) 240ms backwards;
   transition: background-color 150ms ease-out;
 }
-.chart-tab[data-active] { background-color: #0b2f2d; }
-.chart-label[data-saved] .chart-spine { background-color: #5eead4; }
+.chart-tab[data-active] { background-color: var(--color-sidebar); }
+.chart-label[data-saved] .chart-spine { background-color: var(--color-sidebar-accent); }
 
 /* สีของหมวดบอกตำแหน่ง: หมวดที่กำลังกรอกเข้มขึ้น หมวดที่มีช่องผิดเปลี่ยนไอคอนเป็นสีเดียวกับเครื่องหมายช่องจำเป็น
    ใช้เฉพาะเฉดเขียวหัวเป็ด เพราะสีแดงถึงเขียวของระดับความเสี่ยงสงวนไว้สำหรับความหมายทางคลินิก */
 .pf-section { transition: border-color 150ms ease-out; }
-.pf-section-head { background-color: #eef6f5; transition: background-color 150ms ease-out; }
-.pf-section-icon { background-color: #115e59; transition: background-color 150ms ease-out; }
-.pf-section:focus-within { border-color: #115e59; }
-.pf-section:focus-within .pf-section-head { background-color: #d9ebe8; }
-.pf-section:has([aria-invalid="true"]) .pf-section-icon { background-color: #991b1b; }
+.pf-section-head { background-color: var(--color-section-tint); transition: background-color 150ms ease-out; }
+.pf-section-icon { background-color: var(--color-primary); transition: background-color 150ms ease-out; }
+.pf-section:focus-within { border-color: var(--color-primary); }
+.pf-section:focus-within .pf-section-head { background-color: var(--color-primary-tint); }
+.pf-section:has([aria-invalid="true"]) .pf-section-icon { background-color: var(--color-risk-critical); }
 
 /* ค่าที่เพิ่งลงแฟ้มค่อย ๆ เผยจากซ้ายไปขวา เหมือนเขียนด้วยหมึก */
 @keyframes chart-ink { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 .chart-ink { animation: chart-ink 280ms ease-out; }
 
 @keyframes chart-caret-blink { 50% { opacity: 0; } }
-.chart-caret { animation: chart-caret-blink 1s steps(1) infinite; }
+/* กะพริบ 5 รอบแล้วค้างไว้ ไม่กะพริบเกิน 5 วินาที (WCAG 2.2.2) */
+.chart-caret { animation: chart-caret-blink 1s steps(1) 5; }
 
 /* ไฮไลต์แถวที่ตรงกับช่องที่กำลังกรอก */
 .chart-row-slider {
@@ -87,7 +88,7 @@
 @keyframes pf-issues-backdrop-flash {
   0% { background-color: rgb(15 23 42 / 0); }
   40% { background-color: rgb(15 23 42 / 0.5); }
-  46% { background-color: rgb(220 38 38 / 0.7); }
+  46% { background-color: color-mix(in srgb, var(--color-risk-high, #dc2626) 70%, transparent); }
   100% { background-color: rgb(15 23 42 / 0.5); }
 }
 @keyframes pf-issues-stamp {
@@ -102,7 +103,7 @@
   72% { transform: scale(1.05) rotate(-6deg); }
   100% { transform: none; }
 }
-@keyframes pf-issues-band-flash { from { background-color: #ef4444; } to { background-color: #b91c1c; } }
+@keyframes pf-issues-band-flash { from { background-color: var(--color-stop-flash); } to { background-color: var(--color-stop-red); } }
 @keyframes pf-issues-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(8px); } }
 @keyframes pf-issues-sheet-out { from { transform: none; } to { transform: translateY(100%); } }
 @keyframes pf-issues-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -112,15 +113,16 @@
 @keyframes pf-issues-row-in { from { clip-path: inset(0 100% 0 0); transform: translateX(-12px); } to { clip-path: inset(0 0 0 0); transform: none; } }
 
 .pf-issues[open] { animation: pf-issues-slam 640ms linear both; }
-/* ขอบจอแดงอยู่ถาวร จึงยังดูเป็นเหตุด่วนแม้เครื่องปิดอนิเมชัน */
-.pf-issues::backdrop { background-color: rgb(15 23 42 / 0.5); background-image: radial-gradient(ellipse at center, transparent 40%, rgb(185 28 28 / 0.55) 100%); }
+/* ขอบจอแดงอยู่ถาวร จึงยังดูเป็นเหตุด่วนแม้เครื่องปิดอนิเมชัน
+   ::backdrop ในเบราว์เซอร์ก่อน Chrome 122 / Safari 17.4 ไม่รับตัวแปรจาก :root จึงใส่ค่าสำรองไว้ */
+.pf-issues::backdrop { background-color: rgb(15 23 42 / 0.5); background-image: radial-gradient(ellipse at center, transparent 40%, color-mix(in srgb, var(--color-stop-red, #b91c1c) 55%, transparent) 100%); }
 .pf-issues[open]::backdrop { animation: pf-issues-backdrop-flash 640ms ease-out both; }
 .pf-issues[data-state="exit"] { animation: pf-issues-out 150ms cubic-bezier(0.4, 0, 1, 1) both; }
 .pf-issues[data-state="exit"]::backdrop { animation: pf-issues-fade-out 150ms linear both; }
 
 .pf-issues-band { animation: pf-issues-band-flash 420ms ease-out 280ms backwards; }
 /* เส้นคู่ตามแบบตรายาง ตัวเอียงใช้ rotate แยกจาก transform ตราจึงเอียงเท่าเดิมตลอดการปั๊ม */
-.pf-issues-stamp { rotate: -2deg; box-shadow: inset 0 0 0 2px #b91c1c, inset 0 0 0 3px #ffffff; animation: pf-issues-stamp 180ms linear 100ms backwards; }
+.pf-issues-stamp { rotate: -2deg; box-shadow: inset 0 0 0 2px var(--color-stop-red), inset 0 0 0 3px #ffffff; animation: pf-issues-stamp 180ms linear 100ms backwards; }
 .pf-issues-mark { transform-origin: 12px 12px; animation: pf-issues-mark-jolt 520ms ease-out 280ms backwards; }
 /* คลื่นแรงกระแทกสองชั้น ตัดอยู่ในแถบแดงเพื่อไม่ให้รบกวนรายการ */
 @keyframes pf-issues-ripple { from { opacity: 0.8; transform: scale(1); } to { opacity: 0; transform: scale(5); } }
@@ -129,7 +131,7 @@
 
 .pf-issues-row { animation: pf-issues-row-in 280ms ease-out var(--row-delay, 0ms) backwards; transition: background-color 120ms ease-out, transform 100ms ease-out; }
 .pf-issues-row:active { transform: scale(0.99); }
-.pf-issues-row[data-picked] { background-color: #d9ebe8; }
+.pf-issues-row[data-picked] { background-color: var(--color-primary-tint); }
 
 /* เครื่องหมายหน้ารายการตามหลังแถวเล็กน้อย กากบาทวาดทีละเส้น */
 .pf-issues-marker-pop { transform-origin: center; animation: pf-issues-pop 280ms cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--row-delay, 0ms) + 100ms) backwards; }

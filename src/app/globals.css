@@ -12,6 +12,46 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * สีของระบบ ชื่อตรงกับ colors ใน DESIGN.md ใช้ได้ทั้งเป็นคลาส (bg-primary, text-risk-critical)
+ * และเป็นตัวแปรในไฟล์ .css (var(--color-primary))
+ * static: ส่งออกตัวแปรทุกตัวเสมอ เพราะไฟล์ .css ของคอมโพเนนต์อ้างถึงโดยตรงโดยไม่ผ่านคลาส
+ * สีแบรนด์ตอนนี้เป็นของชั่วคราว เมื่อโรงพยาบาลส่งสีจริงมาให้แก้ที่นี่ที่เดียว
+ */
+@theme static {
+  /* เขียวหัวเป็ดหลัก */
+  --color-primary: #115e59;
+  --color-primary-hover: #0f4f4b;
+  --color-primary-tint: #d9ebe8;
+  --color-section-tint: #eef6f5;
+  --color-section-note: #2f5f5b;
+
+  /* แถบเมนูสีเข้ม และสีที่ใช้บนพื้นเขียวเข้ม */
+  --color-sidebar: #0b2f2d;
+  --color-sidebar-text: #cfe6e3;
+  --color-sidebar-icon: #9cc5c0;
+  --color-sidebar-muted: #8fb8b3;
+  --color-sidebar-accent: #5eead4;
+  --color-brand-tile: #14b8a6;
+
+  /* ระดับความเสี่ยง (ความหมายทางคลินิก ห้ามใช้ตกแต่ง) */
+  --color-risk-critical: #991b1b;
+  --color-risk-high: #dc2626;
+  --color-risk-watch: #ea580c;
+  --color-risk-uncontrolled: #d97706;
+  --color-risk-well-controlled: #15803d;
+  --color-no-data: #94a3b8;
+  --color-not-in-remission: #64748b;
+
+  /* กล่องแจ้งช่องที่ต้องแก้: แดงสดกว่าระดับวิกฤต เพื่อไม่ให้อ่านเป็นความเสี่ยงของผู้ป่วย */
+  --color-stop-red: #b91c1c;
+  --color-stop-flash: #ef4444;
+
+  /* กระดาษสีของกล่องฉลองเท่านั้น */
+  --color-confetti-gold: #fde68a;
+  --color-confetti-mint: #99f6e4;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

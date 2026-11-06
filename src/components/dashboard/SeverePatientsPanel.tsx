@@ -12,6 +12,9 @@ type Props = {
   thresholdsIncomplete: boolean;
 };
 
+/** ป้ายสถานะเล็ก ใช้รูปแบบเดียวกับ AlertTag และ StaleTag ในรายชื่อผู้ป่วย */
+const ROW_TAG = "inline-flex items-center whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-medium";
+
 const THRESHOLD_NOTE = "ผู้ป่วยน้ำตาลสูงหรือต่ำมากอาจยังไม่ถูกจัดเป็นวิกฤต จนกว่าแพทย์จะกำหนดเกณฑ์";
 
 /** รายชื่อดูอย่างเดียว กดเพื่อเปิดประวัติผู้ป่วย การรับทราบแจ้งเตือนทำที่หน้าการแจ้งเตือน */
@@ -39,12 +42,13 @@ export default function SeverePatientsPanel({ severe, critical, high, thresholds
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <RiskBadge level={p.level} />
                 <span className="min-w-0 text-sm font-semibold text-slate-900">{p.name}</span>
+                {/* ป้ายสถานะแทนข้อความท้ายบรรทัด เพื่อให้ไล่หาแถวที่ยังไม่รับทราบหรือใช้ข้อมูลเก่าได้เร็ว */}
+                {p.hasOpenAlert ? <span className={`${ROW_TAG} bg-red-600 text-white`}>ยังไม่รับทราบ</span> : null}
+                {p.isStale ? <span className={`${ROW_TAG} border border-slate-500 bg-white text-slate-800`}>ข้อมูลเก่า</span> : null}
               </span>
               {p.reason ? <span className="mt-1 block text-[13.5px] leading-snug text-slate-700">{p.reason}</span> : null}
               <span className="mt-0.5 block text-[12.5px] leading-snug text-slate-600">
                 HN {p.hn}, {p.eventDate ? formatThaiDate(p.eventDate) : "ไม่มีวันที่วัด"}
-                {p.isStale ? ", ข้อมูลเก่า" : ""}
-                {p.hasOpenAlert ? ", ยังไม่รับทราบ" : ""}
               </span>
             </Link>
           </li>

@@ -47,7 +47,7 @@ export default function CriticalLoginDialog({ alerts, onClose }: Props) {
           <header className="crit-band relative flex items-center gap-5 overflow-hidden py-4 pl-6 pr-5 text-white">
             <CriticalBeacon />
             <div className="min-w-0">
-              <h2 id="crit-login-title" className="text-2xl font-bold leading-tight">ผู้ป่วยวิกฤตที่ยังไม่รับทราบ {countText}</h2>
+              <h2 id="crit-login-title" className="text-2xl font-semibold leading-tight">ผู้ป่วยวิกฤตที่ยังไม่รับทราบ {countText}</h2>
               <div className="mt-1.5"><span className="inline-flex rounded-md ring-1 ring-white"><RiskBadge level="CRITICAL" /></span></div>
             </div>
           </header>
@@ -58,7 +58,7 @@ export default function CriticalLoginDialog({ alerts, onClose }: Props) {
           <ul className="max-h-[45vh] divide-y divide-slate-200 overflow-y-auto border-y border-slate-200" aria-label="รายชื่อผู้ป่วยวิกฤต">
             {alerts.map((alert) => (
               <li key={alert.id} className="py-3">
-                <p className="text-lg font-bold leading-snug">{alert.patientName} <span className="text-sm font-normal tabular-nums text-slate-700">HN {alert.hn}</span></p>
+                <p className="text-lg font-semibold leading-snug">{alert.patientName} <span className="text-sm font-normal tabular-nums text-slate-700">HN {alert.hn}</span></p>
                 <p className="mt-0.5 text-base font-semibold text-[#991b1b]">{alert.summary}</p>
                 <p className="mt-0.5 text-[13px] text-slate-700">วัด {formatThaiDate(alert.measuredDate)}</p>
               </li>

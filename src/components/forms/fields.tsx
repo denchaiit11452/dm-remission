@@ -6,37 +6,59 @@ const CONTROL = "mt-1 min-h-11 w-full rounded-[10px] border border-slate-300 bg-
 
 export const PRIMARY_BUTTON = `inline-flex min-h-11 items-center justify-center rounded-lg bg-teal-800 px-5 text-sm font-medium text-white hover:bg-teal-900 disabled:cursor-wait disabled:opacity-70 ${FOCUS}`;
 export const SECONDARY_BUTTON = `inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:opacity-50 ${FOCUS}`;
-export const DANGER_BUTTON = `inline-flex min-h-11 items-center justify-center rounded-lg bg-[#991b1b] px-5 text-sm font-medium text-white hover:bg-red-900 disabled:cursor-wait disabled:opacity-70 ${FOCUS}`;
+export const DANGER_BUTTON = `inline-flex min-h-11 items-center justify-center rounded-lg bg-risk-critical px-5 text-sm font-medium text-white hover:bg-red-900 disabled:cursor-wait disabled:opacity-70 ${FOCUS}`;
 export const TEXT_LINK = `inline-flex min-h-11 items-center text-sm font-medium text-teal-800 underline underline-offset-2 ${FOCUS}`;
 
-type ShellProps = { id: string; label: string; required?: boolean; error?: string; hint?: string; children: ReactNode };
+/** ค่าที่อ่านกลับให้ผู้กรอกตรวจ เช่น วันที่เป็น พ.ศ. warn = ค่าที่ต้องระวัง (มีคำกำกับในข้อความเสมอ) */
+export type FieldReadback = { text: string; warn?: boolean };
 
-function FieldShell({ id, label, required, error, hint, children }: ShellProps) {
+type ShellProps = {
+  id: string;
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+  /** undefined = ช่องนี้ไม่มีบรรทัดอ่านกลับ, null = มีแต่ยังไม่มีค่า (จองบรรทัดไว้ ฟอร์มจึงไม่กระโดดตอนกรอก) */
+  readback?: FieldReadback | null;
+  children: ReactNode;
+};
+
+function FieldShell({ id, label, required, error, hint, readback, children }: ShellProps) {
   return (
     <div>
       <label htmlFor={id} className="text-sm font-medium text-slate-900">
         {label}
-        {required ? <span className="text-[#991b1b]"> * <span className="sr-only">จำเป็นต้องกรอก</span></span> : null}
+        {required ? <span className="text-risk-critical"> * <span className="sr-only">จำเป็นต้องกรอก</span></span> : null}
       </label>
       {children}
       {hint ? <p id={`${id}-hint`} className="mt-1 text-xs text-slate-700">{hint}</p> : null}
+      {/* อยู่ใต้คำแนะนำ ช่องว่างที่จองไว้ตอนยังไม่กรอกจึงอยู่ท้ายสุด ไม่แทรกระหว่างช่องกับคำแนะนำ */}
+      {readback !== undefined ? (
+        <p
+          id={`${id}-readback`}
+          aria-live="polite"
+          className={`mt-0.5 min-h-5 text-[13px] font-medium leading-5 tabular-nums ${readback?.warn ? "text-red-800" : "text-primary-hover"}`}
+        >
+          {readback?.text ?? ""}
+        </p>
+      ) : null}
       {error ? <p id={`${id}-error`} className="mt-1 text-sm text-red-800">{error}</p> : null}
     </div>
   );
 }
 
-function describedBy(id: string, error?: string, hint?: string): string | undefined {
-  const ids = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean);
+function describedBy(id: string, error?: string, hint?: string, readback?: FieldReadback | null): string | undefined {
+  const ids = [readback ? `${id}-readback` : null, hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean);
   return ids.length > 0 ? ids.join(" ") : undefined;
 }
 
 type FieldProps = { name: string; label: string; error?: string; hint?: string };
 
-export function TextField({ name, label, error, hint, required, ...rest }: FieldProps & InputHTMLAttributes<HTMLInputElement>) {
+export function TextField({ name, label, error, hint, required, readback, ...rest }: FieldProps & { readback?: FieldReadback | null } & InputHTMLAttributes<HTMLInputElement>) {
   const id = `field-${name}`;
   return (
-    <FieldShell id={id} label={label} required={required} error={error} hint={hint}>
-      <input id={id} name={name} required={required} aria-invalid={error ? true : undefined} aria-describedby={describedBy(id, error, hint)} className={CONTROL} {...rest} />
+    <FieldShell id={id} label={label} required={required} error={error} hint={hint} readback={readback}>
+      <input id={id} name={name} required={required} aria-invalid={error ? true : undefined} aria-describedby={describedBy(id, error, hint, readback)} className={CONTROL} {...rest} />
     </FieldShell>
   );
 }

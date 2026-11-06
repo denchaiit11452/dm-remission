@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { createPatientAction, updatePatientAction } from "@/app/(main)/patients/actions";
 import { useSaveToast } from "@/components/forms/SaveToast";
+import UnsavedChangesGuard from "@/components/forms/UnsavedChangesGuard";
 import { FormError, PRIMARY_BUTTON, SECONDARY_BUTTON, SelectField, TextAreaField, TextField } from "@/components/forms/fields";
+import { birthDateReadback, pastDateReadback } from "@/lib/date-readback";
 import { GENDER_LABELS } from "@/lib/format";
 import {
   DIABETES_TYPE_LABELS, PATIENT_FIELD_LIMITS as LIMITS, issuesFromFieldErrors, sanitizeHnInput, sanitizePhoneInput, toPatientPayload, validatePatientForm,
@@ -58,9 +60,9 @@ function FormSection({ id, title, note, icon, children }: FormSectionProps) {
             <span aria-hidden="true" className="pf-section-icon flex size-8 shrink-0 items-center justify-center rounded-lg text-white">
               <svg viewBox="0 0 16 16" className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round">{SECTION_ICONS[icon]}</svg>
             </span>
-            <h2 id={id} className="text-base font-semibold text-[#0f4f4b]">{title}</h2>
+            <h2 id={id} className="text-base font-semibold text-primary-hover">{title}</h2>
           </div>
-          {note ? <p className="text-[12.5px] text-[#2f5f5b]">{note}</p> : null}
+          {note ? <p className="text-[12.5px] text-section-note">{note}</p> : null}
         </div>
       ) : (
         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
@@ -191,6 +193,9 @@ export default function PatientForm({ patientId, initial, today, cancelHref }: P
     }
   }
 
+  // มีค่าที่ต่างจากตอนเปิดหน้า = มีข้อมูลที่ยังไม่บันทึก หยุดถามเมื่อกำลังบันทึกหรือบันทึกสำเร็จแล้ว
+  const dirty = !saving && !saved && (Object.keys(initial) as (keyof PatientFormValues)[]).some((key) => (liveValues[key] ?? "") !== initial[key]);
+
   const submitLabel = saved ? "กำลังเปิดโปรไฟล์..." : saving ? "กำลังบันทึก..." : patientId ? "บันทึกการแก้ไข" : "เพิ่มผู้ป่วย";
 
   return (
@@ -199,7 +204,8 @@ export default function PatientForm({ patientId, initial, today, cancelHref }: P
       onSubmit={submit}
       onChange={(e) => {
         clearFieldError(e.target.name);
-        if (isNew) setLiveValues(Object.fromEntries(new FormData(e.currentTarget)) as PatientFormValues);
+        // ทั้งหน้าเพิ่มและหน้าแก้ไขใช้ค่าชุดนี้แสดงวันที่เป็น พ.ศ. ใต้ช่อง ส่วนแฟ้มมีเฉพาะหน้าเพิ่ม
+        setLiveValues(Object.fromEntries(new FormData(e.currentTarget)) as PatientFormValues);
       }}
       onFocus={(e) => setFocused(e.target.name || null)}
       onBlur={() => setFocused(null)}
@@ -219,7 +225,7 @@ export default function PatientForm({ patientId, initial, today, cancelHref }: P
               <option value="">ไม่ระบุ</option>
               {Object.entries(GENDER_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </SelectField>
-            <TextField name="birthDate" label="วันเกิด" type="date" hint={PAST_DATE_HINT} max={today} defaultValue={initial.birthDate} error={fieldErrors.birthDate} />
+            <TextField name="birthDate" label="วันเกิด" type="date" hint={PAST_DATE_HINT} readback={birthDateReadback(liveValues.birthDate, today)} max={today} defaultValue={initial.birthDate} error={fieldErrors.birthDate} />
           </div>
         </FormSection>
 
@@ -237,8 +243,8 @@ export default function PatientForm({ patientId, initial, today, cancelHref }: P
             <SelectField name="diabetesType" label="ชนิดเบาหวาน" defaultValue={initial.diabetesType} error={fieldErrors.diabetesType}>
               {Object.entries(DIABETES_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </SelectField>
-            <TextField name="diagnosedAt" label="วันที่วินิจฉัย" type="date" hint={PAST_DATE_HINT} max={today} defaultValue={initial.diagnosedAt} error={fieldErrors.diagnosedAt} />
-            <TextField name="programStartDate" label="วันที่เริ่มโปรแกรม" type="date" hint={PAST_DATE_HINT} max={today} defaultValue={initial.programStartDate} error={fieldErrors.programStartDate} />
+            <TextField name="diagnosedAt" label="วันที่วินิจฉัย" type="date" hint={PAST_DATE_HINT} readback={pastDateReadback(liveValues.diagnosedAt, today)} max={today} defaultValue={initial.diagnosedAt} error={fieldErrors.diagnosedAt} />
+            <TextField name="programStartDate" label="วันที่เริ่มโปรแกรม" type="date" hint={PAST_DATE_HINT} readback={pastDateReadback(liveValues.programStartDate, today)} max={today} defaultValue={initial.programStartDate} error={fieldErrors.programStartDate} />
           </div>
           <TextAreaField name="notes" label="หมายเหตุ" hint={maxCharsHint(LIMITS.notes)} maxLength={LIMITS.notes} defaultValue={initial.notes} error={fieldErrors.notes} />
         </FormSection>
@@ -264,6 +270,7 @@ export default function PatientForm({ patientId, initial, today, cancelHref }: P
       </div>
 
       {issues ? <PatientFormIssuesDialog issues={issues} onClose={closeIssues} /> : null}
+      <UnsavedChangesGuard when={dirty} />
     </form>
   );
 }

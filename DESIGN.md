@@ -43,6 +43,13 @@ colors:
   caution-border: "oklch(87.9% 0.169 91.605)"
   caution-ink: "oklch(27.9% 0.077 45.635)"
   alert-count: "oklch(57.7% 0.245 27.325)"
+  section-tint: "#eef6f5"
+  section-note: "#2f5f5b"
+  stop-red: "#b91c1c"
+  stop-flash: "#ef4444"
+  critical-backdrop: "rgb(69 10 10 / 0.84)"
+  confetti-gold: "#fde68a"
+  confetti-mint: "#99f6e4"
 typography:
   metric:
     fontFamily: "IBM Plex Sans Thai, Arial, Helvetica, sans-serif"
@@ -199,6 +206,30 @@ components:
     typography: "{typography.body}"
     rounded: "{rounded.container}"
     padding: "12px 16px"
+  form-section-head:
+    backgroundColor: "{colors.section-tint}"
+    textColor: "{colors.primary-hover}"
+    padding: "10px 20px"
+  form-section-head-active:
+    backgroundColor: "{colors.primary-tint}"
+    textColor: "{colors.primary-hover}"
+  chart-label-head:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.surface}"
+    padding: "16px 16px 16px 20px"
+  celebration-band:
+    backgroundColor: "{colors.primary}"
+    textColor: "{colors.surface}"
+    padding: "16px 20px"
+  stop-band:
+    backgroundColor: "{colors.stop-red}"
+    textColor: "{colors.surface}"
+    padding: "16px 20px"
+  critical-band:
+    backgroundColor: "{colors.risk-critical}"
+    textColor: "{colors.surface}"
+    typography: "{typography.headline}"
+    padding: "16px 20px 16px 24px"
 ---
 
 # Design System: DM Remission
@@ -211,7 +242,7 @@ The app reads like a well-kept ward chart: quiet paper, thin rules, and a mark o
 
 Density is working density. A clinician scans badges, bars, and tabular numbers in rows at least 44px tall, on a desktop, a tablet, or a phone during a home visit. Secondary facts stay on screen as small slate captions instead of hiding behind interaction.
 
-The chart is honest about what it does not know. Old data looks faded rather than current, unset thresholds say they are waiting rather than showing zero, and a thing that cannot be assessed says so in words. The recorded scope is the signed-in app: the shell, shared components, and the dashboard. The login route is its own surface with its own font and photograph, and it is not part of these tokens.
+The chart is honest about what it does not know. Old data looks faded rather than current, unset thresholds say they are waiting rather than showing zero, and a thing that cannot be assessed says so in words. The recorded scope is the signed-in app: the shell, shared components, the dashboard, the add-patient form, and the alert popups. The login route is its own surface with its own font and photograph, and it is not part of these tokens.
 
 **Key Characteristics:**
 - Flat white panels with 1px hairlines on a pale slate canvas, framed by a dark green sidebar.
@@ -220,16 +251,19 @@ The chart is honest about what it does not know. Old data looks faded rather tha
 - Waiting and insufficient-data states written in words, never drawn as zero.
 - Inline SVG line icons and charts, with no raster imagery in the shell or dashboard.
 - Light theme only in the signed-in app.
+- Three popups on a fixed ladder of loudness, with a critical patient always at the top.
 
 ## Colors
 
 The palette is teal and slate for structure, with a red-to-green clinical scale carrying all risk meaning.
 
+**Where the values live:** The named hex colours are declared once in `@theme static` in `src/app/globals.css`, under the same names as the front matter. Components use them as classes, such as `bg-primary` or `text-risk-critical`, and component stylesheets use them as `var(--color-primary)`. The add-patient form, the form issues popup, the back-to-list link, and the celebration already use them; other screens still carry literal hex and move over as they are touched. When the hospital supplies its real colours, change them there. A `::backdrop` rule keeps a literal fallback inside `var()`, because browsers older than Chrome 122 and Safari 17.4 do not pass variables into the backdrop. The Tailwind-named neutrals and Action Teal stay as Tailwind classes.
+
 ### Primary
-- **Deep Clinical Teal** (#115e59): Selected range presets, the custom-range trigger, calendar endpoints, the picker's apply button, the remission series and metric lines in charts, and the systolic pressure line.
+- **Deep Clinical Teal** (#115e59): Selected range presets, the custom-range trigger, calendar endpoints, the picker's apply button, the remission series and metric lines in charts, the systolic pressure line, the patient chart label's head, form section icon tiles, and the celebration band.
 - **Diastolic Teal** (#2a9d8f): The diastolic pressure line only, always beside a written key.
 - **Teal Hover** (#0f4f4b): Hover on the picker's apply button.
-- **Range Tint** (#d9ebe8): Days between the two selected calendar endpoints.
+- **Range Tint** (#d9ebe8): Days between the two selected calendar endpoints, the chart label's sliding row highlight, and the form section being filled in.
 - **Action Teal** (Tailwind teal-800): Shared form buttons and all teal text links. It renders almost identically to Deep Clinical Teal but is a separate value.
 - **Focus Teal** (Tailwind teal-700): The 2px focus outline on every light surface.
 
@@ -238,12 +272,14 @@ The palette is teal and slate for structure, with a red-to-green clinical scale 
 - **Sidebar Text** (#CFE6E3): Inactive menu labels and the logout control.
 - **Sidebar Icon** (#9CC5C0): Inactive menu icons.
 - **Sidebar Muted** (#8FB8B3): Group labels, the tagline, the role line, and the idle-logout note.
-- **Sidebar Accent** (#5EEAD4): The active menu icon, and the focus outline on the dark sidebar.
-- **Brand Tile** (#14B8A6): The tile behind the placeholder drop mark and the user avatar. It is reserved for the shell.
+- **Sidebar Accent** (#5EEAD4): The active menu icon, the focus outline on the dark sidebar, the required-field bar on the chart label, and the celebration stamp, all on dark teal.
+- **Brand Tile** (#14B8A6): The tile behind the placeholder drop mark and the user avatar. Outside the shell it appears only as a moving accent: the chart label's saving line and the celebration's band flash, timer, and confetti.
+- **Section Tint** (#eef6f5): The head strip of a form section at rest.
+- **Section Note** (#2f5f5b): Small notes on a Section Tint or Range Tint strip, where slate would look grey.
 
 ### Tertiary
 Fills are used for bars, swatches, and chart lines. Each badge pairs a pale background with its own dark ink, except Critical, which is a white label on the full fill.
-- **Critical Oxblood** (#991b1b): The critical bar and badge fill, the diabetes lab band, the danger button, and the required-field mark.
+- **Critical Oxblood** (#991b1b): The critical bar and badge fill, the diabetes lab band, the danger button, the required-field mark, the critical alert band, and the icon tile of a form section holding an invalid field.
 - **High Red** (#dc2626): The high-risk bar.
 - **Watch Orange** (#ea580c): The watch bar, plus the lost-remission series and segment.
 - **Uncontrolled Amber** (#d97706): The uncontrolled bar and the at-risk lab band.
@@ -252,7 +288,11 @@ Fills are used for bars, swatches, and chart lines. Each badge pairs a pale back
 - **Not-In-Remission Slate** (#64748b): The not-in-remission segment.
 - **Bar Ink** (#0f172a): Percentages on the light fills: orange, amber, and no-data slate.
 - **Caution Amber** (Tailwind amber-50, amber-300, amber-950): The threshold banner's background, border, and text.
-- **Alert Count Red** (Tailwind red-600): The unacknowledged count pill on the sidebar and bottom navigation.
+- **Alert Count Red** (Tailwind red-600): The unacknowledged count pill on the sidebar and bottom navigation, the dashboard's unacknowledged count when above zero, and the "ยังไม่รับทราบ" tag in the severe patients list.
+- **Stop Red** (#b91c1c): The band of the form issues popup. It is deliberately brighter than Critical Oxblood, so a typing mistake is never read as a patient's risk level.
+- **Stop Flash** (#ef4444): The single flash on the Stop Red band at the moment of impact, and nowhere else.
+- **Critical Backdrop** (rgb(69 10 10 / 0.84)): The near-opaque dark red behind a critical alert. No other surface uses it.
+- **Confetti Gold** (#fde68a) and **Confetti Mint** (#99f6e4): Celebration confetti only, mixed with the teals.
 
 ### Neutral
 - **Canvas** (Tailwind slate-50): The page background and row hover wash.
@@ -271,6 +311,8 @@ Fills are used for bars, swatches, and chart lines. Each badge pairs a pale back
 **The Faded Stale Rule.** The stale part of a risk bar is the same hue as the fresh part at 0.32 opacity, separated by a 2px gap. Staleness never gets its own hue, because the patient's level has not changed, only the confidence in it.
 
 **The Waiting Is Not Zero Rule.** A risk level whose threshold is unset shows "รอแพทย์กำหนดเกณฑ์" with a dash for its count, and never a zero or an empty bar. A summary figure that depends on it shows "ยังประเมินไม่ได้". A true zero is the only thing that may show 0.
+
+**The Teal Means Work Rule.** Colouring a form or a celebration stays inside the teal family. Red appears on a form only where something must be fixed, and confetti never contains a risk hue.
 
 ## Typography
 
@@ -297,6 +339,8 @@ Fills are used for bars, swatches, and chart lines. Each badge pairs a pale back
 
 **The Thai Date Rule.** Full dates render in Thai short form with the Buddhist-era year, such as "4 พ.ย. 2569". Chart axes may shorten to the day and month or the month alone.
 
+**The Three Weights Rule.** Only weights 400, 500, and 600 ship. Weight 600 is the heaviest in the system, including alarm titles, because asking for 700 makes the browser smear a fake bold across Thai letterforms.
+
 ## Layout
 
 The signed-in shell changes navigation by width. At 1440px and above it shows a 256px sidebar, from 1024 to 1439px an 80px icon rail, from 768 to 1023px a sticky top bar with a drawer, and below 768px a 56px bottom bar whose fourth item opens the same drawer.
@@ -307,6 +351,8 @@ The dashboard has two parts in a fixed order. The first shows today's state and 
 
 Dashboard sections stack with a steady 20px gap, with 32px above the second part's heading. Paired panels share a row from 1200px up, with a flexible left column and a fixed 400px right column, so the gutter stays on one line down the page. Both panels stretch to equal height, and their rows spread to fill it. Below 1200px they stack in one column. The summary strip is four cells from 1024px and two by two below that.
 
+The add-patient page sits in a column up to 1152px wide. From 1024px the form takes a flexible left column beside a fixed 344px right column, where the chart label and the action buttons stay together. Below 1024px the chart label's head sticks to the top of the page and the buttons sit at the end of the form. Popups are centred, and below 640px the form issues and critical popups become bottom sheets. The celebration stays centred on every width, because it never takes over the screen.
+
 On phones the rows reflow rather than scroll sideways. A risk row places its badge and count on one line and its bar below. Metric tiles stack in one column. Range presets fill a three-column control.
 
 Spacing inside a panel is 16px between blocks, with 16px padding on mobile and 20px from 768px. List rows use 10px of vertical padding and a hairline between them.
@@ -316,12 +362,12 @@ Spacing inside a panel is 16px between blocks, with 16px padding on mobile and 2
 
 ## Elevation & Depth
 
-The system is flat at rest. Panels, strips, and banners separate through 1px hairlines and the step from Canvas to Surface, with no shadow. Shadow appears only on things that float above the page: a soft 4px 12px shadow on the chart tooltip, a soft 8px 24px shadow on the desktop calendar popover, and a large shadow on the navigation drawer. Modal sheets and the drawer also dim the page behind them with a dark slate backdrop.
+The system is flat at rest. Panels, strips, and banners separate through 1px hairlines and the step from Canvas to Surface, with no shadow. Shadow appears only on things that float above the page: a soft 4px 12px shadow on the chart tooltip, a soft 8px 24px shadow on the desktop calendar popover, and a large shadow on the navigation drawer. Modal sheets and the drawer also dim the page behind them with a dark slate backdrop. The form issues popup adds a permanent red edge to that slate, and a critical alert replaces it with the near-opaque Critical Backdrop. The celebration has no dimming at all, only a thin teal glow that clicks pass through.
 
 ### Shadow Vocabulary
 - **Tooltip** (`box-shadow: 0 4px 12px rgba(15,23,42,0.12)`): The chart's value tooltip.
 - **Popover** (`box-shadow: 0 8px 24px rgba(15,23,42,0.16)`): The date range popover at 768px and up.
-- **Drawer** (`box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25)`): The slide-over navigation drawer.
+- **Drawer** (`box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25)`): The slide-over navigation drawer, and every popup and modal sheet.
 
 ### Named Rules
 **The Only-What-Floats Rule.** A surface gets a shadow only if it floats over other content. Anything resting in the page flow uses a hairline.
@@ -331,6 +377,8 @@ The system is flat at rest. Panels, strips, and banners separate through 1px hai
 Corners are gently rounded and scale with the size of the object: 3px on legend swatches, 4px on bars and segments, 6px on badges and row hovers, 8px on buttons and range controls, 10px on dashboard panels and form fields, 12px on banners, popovers, and the white containers of other signed-in surfaces, and 16px on the top of the mobile sheet. Full pills are kept for count badges and avatars.
 
 Risk bars keep a square left edge against the column start and round only their right end. Calendar ranges read as one continuous band, rounded only on the outer edges of the two endpoints.
+
+The form issues and celebration popups carry a rubber stamp: a 3px outline with a thin inner line and 6px corners, tilted 2 degrees, left for the warning and right for the celebration. The stamp belongs to those two popups only. A critical alert has no stamp, because a patient emergency is not a piece of play.
 
 Icons are 16-unit line drawings in inline SVG that take the current text colour.
 
@@ -376,6 +424,10 @@ A 28px proportional bar for groups that sum to a whole, such as remission status
 
 ### Summary Strip
 Four cells in one bordered container, separated by 1px Hairline gaps. Each cell holds a label, a Metric with a unit, and a caption. When a value cannot be computed, the cell uses Metric Text words instead of a number.
+- **Value ink:** A figure takes the colour that means the same thing elsewhere on the page, but only when it is above zero: patients in remission use Deep Clinical Teal like the remission series, critical and high-risk patients use Critical Oxblood, and unacknowledged alerts use Alert Count Red like the sidebar pill. "ยังประเมินไม่ได้" uses Tailwind amber-800 from the Caution Amber family. The total and any zero stay Ink, so colour only ever points at something to look at. The cell label still carries the meaning.
+
+### Severe Patients List
+Each row reads RiskBadge, name, then status tags, with the reason and an "HN, date" caption below. An unacknowledged alert is a solid Alert Count Red tag reading "ยังไม่รับทราบ", and stale data is the white slate-500 stroked tag reading "ข้อมูลเก่า". Both use the same shape as AlertTag and StaleTag in the patient list, so a clinician scanning the list can pick out these rows without reading the captions.
 
 ### Threshold Banner
 A status banner shown when clinical thresholds are incomplete. It uses the Caution Amber set at 12px radius, and shows a link to settings only to roles that may open it.
@@ -383,7 +435,7 @@ A status banner shown when clinical thresholds are incomplete. It uses the Cauti
 ### Charts
 Hand-drawn inline SVG, with fixed type size at any width.
 - **Trend chart:** 2px lines with round caps, a 10% teal area under the remission series, hairline gridlines, and direct value labels at the line ends.
-- **Metric small multiples:** Five tiles divided by hairlines, each with its own labelled axis because the units differ, and HbA1c and FBS wider on the top row. HbA1c and FBS carry a 1px Critical Oxblood line at the diabetes band, with a written label. Pointing at any tile moves all five to the same date, and each large value changes to that date instead of opening a tooltip.
+- **Metric small multiples:** Five tiles divided by hairlines, each with its own labelled axis because the units differ, and HbA1c and FBS wider on the top row. HbA1c and FBS carry a 1px Critical Oxblood line at the diabetes band, with a written label in the same oxblood, so the label is clearly tied to its line. Pointing at any tile moves all five to the same date, and each large value changes to that date instead of opening a tooltip.
 - **Chart arrival:** The metric lines sweep left to right over 800ms when scrolled into view, with a one-shot ripple at the latest value. Lab band bars use the same reveal over 600ms, with no ripple. All of them replay only when the data changes.
 - **Risk bar arrival:** Bars grow from one baseline over 800ms, top row first, with the count riding the bar tip and always showing its real value. The stale segment starts at full colour and settles to 0.32 opacity, because the level has not changed, only the confidence in it. Pressing a row darkens it immediately.
 - **Reduced motion:** Nothing moves. Bars fade in one after another over 400ms each, and the stale segment still settles. The frame, axes, and figures never animate, and values do not count up, so no false number is ever on screen.
@@ -396,6 +448,36 @@ A native dialog anchored to the range trigger. From 768px it is a 682px two-mont
 - **Style:** White, 1px Control Border, 10px radius, 44px tall, with 16px text.
 - **Focus:** 2px Focus Teal outline at a 1px offset.
 - **Error / Disabled:** An error turns the border red and adds a red message below. Disabled fields use a Canvas fill.
+
+- **Date readback:** Every date field on the patient form, on both the add and edit pages and on every width, reads its value back on a line under the hint as a Thai Buddhist-era date, such as "15 มี.ค. 2503 อายุ 66 ปี". The browser's date control may show the Christian-era year, and on narrow screens this line is the only place the clinician can check the year. The line is 13px weight 500 in Teal Hover, turns red-800 with the words "เป็นวันในอนาคต" for a future date, and keeps its height while empty so the form never jumps. It uses the same function as the chart label, so the two always agree.
+- **Limits up front:** On the patient form, every text field states its limit in a caption before anything goes wrong. Fields that only take digits drop other characters as they are typed or pasted.
+
+### Patient Form
+The add-patient page. The edit page shares the form but keeps plain section headings and has no chart label.
+- **Section head:** A strip of Section Tint bleeding to the container's edges, with a 32px icon tile, the title in Teal Hover, and an optional note in Section Note.
+- **States:** The section being filled in darkens to Range Tint and its border turns Deep Clinical Teal. A section holding an invalid field turns its icon tile Critical Oxblood, while the red messages under each field carry the meaning in words.
+
+### Patient Chart Label (Signature)
+A patient file that writes itself as the form is typed, so the person entering data always sees who the record is for.
+- **Head:** Deep Clinical Teal, with the HN on a matching file tab, the name, and one required-field bar per mandatory field. It is the strongest colour on the page, and on narrow screens the only part shown.
+- **Rows:** From 1024px a list on white reads each value back in plain words, such as a Thai date with age. A Range Tint highlight slides to the row for the field in focus, and typed values reveal left to right like ink.
+- **Saved:** The ring and check draw on the head, and the spine turns Sidebar Accent.
+
+### Alert Ladder (Signature)
+Three popups with a fixed order of loudness, each tied to what actually happened.
+- **Save celebration (quietest):** Adding a new patient only. A thin teal glow, a white card with a Deep Clinical Teal band, and a "เยี่ยมมาก!" stamp. At 300ms the card hops twice and confetti of paper, dots, and medical crosses bursts and falls. It takes no focus, lets clicks through, and closes itself after 6 seconds with a timer bar showing the time left.
+- **Form issues popup (loud):** A blocked save. Slate backdrop with a red edge, a Stop Red band, and a "หยุดก่อน!" stamp. At 280ms the page flinches about 10px, the backdrop flashes red once, the box shakes, and the warning mark jolts. Rows mark empty fields with a dashed ring and invalid ones with a drawn cross. Choosing a row flies the box into that field, which then nudges and fades from pale red. Below 640px the sheet slides away instead.
+- **Critical alert (loudest):** A new critical patient, or the summary after login. Critical Backdrop, a Critical Oxblood band with a beacon, and the reading set large in a pale red box. The page flinches about 15px, then the backdrop, band, and beacon keep beating every 1.8 seconds until someone closes it. It never closes by itself, ignores clicks outside, and has no stamp or play. The next patient in a queue slides in from the right.
+- **Reduced motion:** Nothing moves or flashes, and nothing loops. Each rung must still read at its level when still: the stamps, bands, and backdrops all hold, confetti rests scattered around the card, and the beacon's rings stay visible.
+- **Everything else:** Saving a lab result, a medication, a threshold, or an edit stays a plain green status bar.
+- **Celebration timer:** The 6 seconds pause while a mouse or pen points at the card, while focus is inside it, and while the tab is hidden, then resume from the time left. The timer bar pauses with them, so it always shows the true time left.
+
+### Unsaved Changes Guard
+A plain ActionDialog, below every rung of the Alert Ladder, with no stamp, band, or movement. It opens when someone with unsaved patient form data follows an in-app link, such as ยกเลิก, กลับไปรายชื่อผู้ป่วย, the sidebar, or the bottom bar. The title reads "ข้อมูลที่กรอกยังไม่ได้บันทึก". "กรอกต่อ" is the primary button and takes focus, and Esc or a click outside also keeps editing. "ทิ้งข้อมูลและออก" uses the danger button. A form whose values all match how it opened counts as clean and never asks. The guard does not use the browser's leave-page prompt, because that prompt would block the 30-minute idle logout.
+
+**The Loudest Alarm Rule.** Nothing in the app may outrank the critical alert in backdrop weight, page movement, or persistence. A new popup takes a rung below it, or the critical alert is raised first.
+
+**The No Confetti On Results Rule.** Celebrate only events that are good news whatever the data says. A saved reading may be a patient's worst day, so results, medications, and thresholds never celebrate.
 
 ### Navigation
 - **Sidebar:** Sidebar Forest, with 15px labels and line icons in rows at least 44px tall and 10px radius.
@@ -412,13 +494,18 @@ A native dialog anchored to the range trigger. From 768px it is a 682px two-mont
 - **Do** write "รอแพทย์กำหนดเกณฑ์" or "ยังประเมินไม่ได้" when a threshold or rule set is missing.
 - **Do** keep interactive targets at least 44px tall on every viewport.
 - **Do** keep panels flat with a 1px hairline, and reserve shadow for floating surfaces.
-- **Do** use the Focus Teal outline on light surfaces and the Sidebar Accent outline on the dark sidebar.
+- **Do** use the Focus Teal outline on light surfaces, the Sidebar Accent outline on the dark sidebar, and a white outline on a red band.
+- **Do** design every popup to hold its rung with animation off, since Windows can turn animation off for a whole machine.
+- **Do** keep a popup's controls usable from the first frame, so no animation ever makes a clinician wait.
 - **Do** treat "DM Remission" and the drop mark as placeholders, and replace them when the hospital supplies its real name and logo.
 
 ### Don't:
 - **Don't** tell Watch Orange and Uncontrolled Amber apart by hue alone; they failed colour-blind separation.
 - **Don't** render an unset threshold as 0, an empty bar, or a normal-looking row.
 - **Don't** give stale data a separate hue or hide it inside the fresh count.
-- **Don't** claim IBM Plex Sans Thai in specs or handoffs until a build actually loads it.
+- **Don't** set any text heavier than weight 600.
+- **Don't** make a popup louder than the critical alert, or add a stamp or confetti to it.
+- **Don't** flash red more than once per popup, or let anything beat faster than once a second.
+- **Don't** use Stop Red or the stamp to show a patient's risk.
 - **Don't** use a risk colour for decoration; each hue is a clinical signal.
 - **Don't** add raster imagery to the signed-in shell or dashboard, which ship inline SVG only, apart from the hospital's real logo once it is supplied.

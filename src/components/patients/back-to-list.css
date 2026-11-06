@@ -1,0 +1,102 @@
+/*
+ * ปุ่มกลับไปรายชื่อผู้ป่วย: ลูกศรชี้ทางกลับ และรายการเล็ก ๆ ปลายทาง
+ * - เปิดหน้า: ลูกศรกวักสองจังหวะ ครั้งเดียว (ไม่วนซ้ำ) และวงแหวนกระเพื่อมออกหนึ่งรอบ
+ * - ชี้เมาส์/โฟกัสคีย์บอร์ด: ลูกศรดึงไปทางซ้าย แถวรายการคลี่ออกทีละแถว
+ * - กด: ลูกศรพุ่งออกซ้าย ปุ่มยุบลงเล็กน้อย
+ * ตัวปุ่มมองเห็นตั้งแต่แรกเสมอ อนิเมชันขยับเฉพาะชิ้นส่วนภายใน
+ */
+
+.back-list {
+  --back-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    background-color 200ms var(--back-ease),
+    border-color 200ms var(--back-ease),
+    box-shadow 200ms var(--back-ease),
+    transform 150ms var(--back-ease);
+}
+
+.back-list-badge {
+  position: relative;
+  transition: background-color 200ms var(--back-ease);
+}
+
+/* วงแหวนกระเพื่อมหนึ่งรอบตอนเปิดหน้า บอกว่า "ทางกลับอยู่ตรงนี้" */
+.back-list-badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid var(--color-brand-tile);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.back-list-arrow {
+  transition: transform 220ms var(--back-ease);
+}
+
+.back-list-row {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transition: transform 260ms var(--back-ease), opacity 260ms var(--back-ease);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* backwards ไม่ใช่ both: ถ้าค้างเฟรมสุดท้ายไว้ อนิเมชันจะทับ transform ตอนชี้เมาส์/กด */
+  .back-list-arrow {
+    animation: back-list-beckon 900ms var(--back-ease) 350ms 1 backwards;
+  }
+
+  .back-list-badge::after {
+    animation: back-list-ripple 900ms cubic-bezier(0.22, 1, 0.36, 1) 350ms 1 both;
+  }
+
+  @media (hover: hover) {
+    .back-list:hover .back-list-arrow {
+      transform: translateX(-3px);
+    }
+
+    .back-list:hover .back-list-row {
+      animation: back-list-unfurl 380ms var(--back-ease) both;
+    }
+
+    .back-list:hover .back-list-row:nth-of-type(2) {
+      animation-delay: 60ms;
+    }
+
+    .back-list:hover .back-list-row:nth-of-type(3) {
+      animation-delay: 120ms;
+    }
+  }
+
+  .back-list:focus-visible .back-list-arrow {
+    transform: translateX(-3px);
+  }
+
+  .back-list:active {
+    transform: scale(0.97);
+  }
+
+  .back-list:active .back-list-arrow {
+    transform: translateX(-7px);
+    transition-duration: 100ms;
+  }
+}
+
+@keyframes back-list-beckon {
+  0% { transform: translateX(0); }
+  22% { transform: translateX(-5px); }
+  44% { transform: translateX(0); }
+  64% { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes back-list-ripple {
+  0% { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+
+@keyframes back-list-unfurl {
+  0% { transform: scaleX(0.35); opacity: 0.4; }
+  100% { transform: scaleX(1); opacity: 1; }
+}

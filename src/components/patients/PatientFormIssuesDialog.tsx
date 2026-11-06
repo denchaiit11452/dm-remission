@@ -82,7 +82,7 @@ function IssueMarker({ kind }: { kind: PatientFormIssue["kind"] }) {
     );
   }
   return (
-    <svg aria-hidden="true" viewBox="0 0 20 20" className="size-5 shrink-0 text-[#991b1b]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+    <svg aria-hidden="true" viewBox="0 0 20 20" className="size-5 shrink-0 text-risk-critical" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
       <circle className="pf-issues-marker-draw" cx="10" cy="10" r="7" pathLength={1} />
       <path className="pf-issues-marker-draw pf-issues-marker-late" d="M7.5 7.5l5 5" pathLength={1} />
       <path className="pf-issues-marker-draw pf-issues-marker-later" d="M12.5 7.5l-5 5" pathLength={1} />
@@ -174,11 +174,11 @@ export default function PatientFormIssuesDialog({ issues, onClose }: Props) {
       onClick={(e) => { if (e.target === dialogRef.current) closeTo(firstField); }}
       className="pf-issues m-auto w-[min(30rem,calc(100vw-2rem))] rounded-2xl border-0 bg-white p-0 text-slate-900 shadow-2xl backdrop:bg-slate-900/50 max-sm:mb-0 max-sm:mt-auto max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none"
     >
-      {/* ใช้แดงสดกว่าสีวิกฤตของผู้ป่วย (#991b1b) เพื่อไม่ให้อ่านเป็นระดับความเสี่ยง */}
-      <header className="pf-issues-band relative flex items-center gap-4 overflow-hidden bg-[#b91c1c] px-5 py-4 text-white">
+      {/* ใช้แดงสดกว่าสีวิกฤตของผู้ป่วย (risk-critical) เพื่อไม่ให้อ่านเป็นระดับความเสี่ยง */}
+      <header className="pf-issues-band relative flex items-center gap-4 overflow-hidden bg-stop-red px-5 py-4 text-white">
         <WarningMark />
         <h2 id="pf-issues-title" className="min-w-0">
-          <span className="pf-issues-stamp inline-block rounded-md border-[3px] border-white px-3 py-0.5 text-2xl font-bold leading-tight tracking-wide">หยุดก่อน!</span>{" "}
+          <span className="pf-issues-stamp inline-block rounded-md border-[3px] border-white px-3 py-0.5 text-2xl font-semibold leading-tight tracking-wide">หยุดก่อน!</span>{" "}
           <span className="mt-2 block text-[17px] font-semibold leading-6">{dialogTitle(issues)}</span>
         </h2>
       </header>

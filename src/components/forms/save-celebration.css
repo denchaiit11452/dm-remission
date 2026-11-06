@@ -3,7 +3,7 @@
    กระดาษสีเล่นจบในตัว ไม่วนซ้ำ และไม่รับการคลิก */
 
 /* ฉากหลังเรืองเขียวบาง ๆ ไม่มืด หน้าหลังจึงยังอ่านได้และคลิกผ่านได้ */
-.save-cel-wash { background: radial-gradient(ellipse at center, rgb(94 234 212 / 0.38), rgb(17 94 89 / 0.2) 70%); animation: save-cel-fade 260ms ease-out both; }
+.save-cel-wash { background: radial-gradient(ellipse at center, color-mix(in srgb, var(--color-sidebar-accent) 38%, transparent), color-mix(in srgb, var(--color-primary) 20%, transparent) 70%); animation: save-cel-fade 260ms ease-out both; }
 @keyframes save-cel-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes save-cel-fade-out { from { opacity: 1; } to { opacity: 0; } }
 .save-cel[data-closing] { animation: save-cel-fade-out 200ms ease-in both; }
@@ -21,7 +21,7 @@
 }
 .save-cel-card { animation: save-cel-pop 780ms cubic-bezier(0.3, 0.7, 0.4, 1) both; }
 
-@keyframes save-cel-band-flash { from { background-color: #14b8a6; } to { background-color: #115e59; } }
+@keyframes save-cel-band-flash { from { background-color: var(--color-brand-tile); } to { background-color: var(--color-primary); } }
 .save-cel-band { animation: save-cel-band-flash 480ms ease-out 300ms backwards; }
 
 /* ตรา: เส้นคู่แบบตรายาง เอียงด้วย rotate แยกจาก transform จึงเอียงเท่าเดิมตลอดการปั๊ม */
@@ -30,7 +30,7 @@
   78% { opacity: 1; transform: scale(0.9); filter: blur(0); }
   100% { opacity: 1; transform: none; filter: none; }
 }
-.save-cel-stamp { rotate: 2deg; box-shadow: inset 0 0 0 2px #115e59, inset 0 0 0 3px #5eead4; animation: save-cel-stamp 190ms linear 110ms backwards; }
+.save-cel-stamp { rotate: 2deg; box-shadow: inset 0 0 0 2px var(--color-primary), inset 0 0 0 3px var(--color-sidebar-accent); animation: save-cel-stamp 190ms linear 110ms backwards; }
 
 /* เครื่องหมายถูก: วาดวงกับขีดให้จบตรงจังหวะกระแทก แล้วเด้งดีใจ */
 @keyframes save-cel-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }

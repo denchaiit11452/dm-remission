@@ -58,7 +58,7 @@ export default function CriticalAlertDialog({ queue, muted, onClose, onToggleMut
           <header className="crit-band relative flex items-center gap-5 overflow-hidden py-4 pl-6 pr-5 text-white">
             <CriticalBeacon />
             <div className="min-w-0 flex-1">
-              <h2 id="crit-title" className="text-2xl font-bold leading-tight">ผู้ป่วยวิกฤตรายใหม่</h2>
+              <h2 id="crit-title" className="text-2xl font-semibold leading-tight">ผู้ป่วยวิกฤตรายใหม่</h2>
               <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <span className="inline-flex rounded-md ring-1 ring-white"><RiskBadge level="CRITICAL" /></span>
                 {queue.length > 1 ? <span className="text-sm text-[#fee2e2]">1 จาก {queue.length}</span> : null}
@@ -72,7 +72,7 @@ export default function CriticalAlertDialog({ queue, muted, onClose, onToggleMut
         {/* key ทำให้รายถัดไปในคิวเลื่อนเข้ามาใหม่ ผู้ใช้จึงรู้ว่าเป็นคนละรายกับเมื่อครู่ */}
         <div key={head.id} className="crit-content space-y-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           <div id="crit-desc" className="space-y-1">
-            <p className="break-words text-2xl font-bold leading-snug">{head.patientName}</p>
+            <p className="break-words text-2xl font-semibold leading-snug">{head.patientName}</p>
             <p className="text-sm tabular-nums text-slate-700">HN {head.hn}</p>
             <p className="!mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xl font-semibold leading-snug text-[#991b1b]">{head.summary}</p>
             <p className="!mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-700">

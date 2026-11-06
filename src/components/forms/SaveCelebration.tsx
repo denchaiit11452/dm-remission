@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { buildConfetti } from "@/lib/confetti";
 import { SECONDARY_BUTTON, PRIMARY_BUTTON } from "./fields";
 import "./save-celebration.css";
@@ -65,18 +65,48 @@ function SuccessMark() {
  * ฉลองการเพิ่มผู้ป่วยใหม่: ตราเขียวปั๊มลงแฟ้ม กล่องกระโดด แล้วกระดาษสีแตกกระจาย (คู่ตรงข้ามกับตราแดงตอนกรอกผิด)
  * ไม่ยึดโฟกัสและไม่บังการคลิกหน้าหลัง ผู้ใช้จึงทำงานต่อได้ทันที ข้อความอ่านผ่าน role="status" ของ SaveToastProvider
  */
-export default function SaveCelebration({ id, title, detail, name, nextHref, nextLabel, onDismiss }: Props) {
-  const [closing, setClosing] = useState(false);
+/**
+ * นับเวลาปิดเอง โดยหยุดนับเมื่อผู้ใช้กำลังใช้กล่อง (ชี้เมาส์ หรือโฟกัสอยู่ข้างใน) และเมื่อสลับแท็บ
+ * กลับมานับต่อจากเวลาที่เหลือ ไม่เริ่มใหม่ (WCAG 2.2.1)
+ */
+function useAutoClose(onExpire: () => void) {
+  const [engaged, setEngaged] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const remainingRef = useRef(CELEBRATION_VISIBLE_MS);
+  const paused = engaged || hidden;
 
   useEffect(() => {
-    const timer = setTimeout(() => setClosing(true), CELEBRATION_VISIBLE_MS);
-    const closeOnEscape = (e: KeyboardEvent) => { if (e.key === "Escape") setClosing(true); };
-    window.addEventListener("keydown", closeOnEscape);
+    const onVisibility = () => setHidden(document.visibilityState === "hidden");
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, []);
+
+  useEffect(() => {
+    if (paused) return;
+    const startedAt = performance.now();
+    const timer = setTimeout(onExpire, remainingRef.current);
     return () => {
       clearTimeout(timer);
-      window.removeEventListener("keydown", closeOnEscape);
+      remainingRef.current = Math.max(0, remainingRef.current - (performance.now() - startedAt));
     };
-  }, []);
+  }, [paused, onExpire]);
+
+  return { paused, setEngaged };
+}
+
+export default function SaveCelebration({ id, title, detail, name, nextHref, nextLabel, onDismiss }: Props) {
+  const [closing, setClosing] = useState(false);
+  const close = useCallback(() => setClosing(true), []);
+  const { paused, setEngaged } = useAutoClose(close);
+  const hoverRef = useRef(false);
+  const focusRef = useRef(false);
+  const syncEngaged = () => setEngaged(hoverRef.current || focusRef.current);
+
+  useEffect(() => {
+    const closeOnEscape = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [close]);
 
   return (
     <div
@@ -87,11 +117,18 @@ export default function SaveCelebration({ id, title, detail, name, nextHref, nex
       <div aria-hidden="true" className="save-cel-wash absolute inset-0" />
       <Confetti seed={id} />
 
-      <div className="save-cel-card pointer-events-auto relative w-[min(28rem,100%)] overflow-hidden rounded-2xl bg-white text-slate-900 shadow-2xl">
-        <div className="save-cel-band relative flex items-center gap-4 overflow-hidden bg-[#115e59] px-5 py-4 text-white">
+      <div
+        // จอสัมผัส: pointerleave เกิดทันทีหลังยกนิ้ว จึงนับเฉพาะเมาส์และปากกา ส่วนการแตะปุ่มทำงานทันทีอยู่แล้ว
+        onPointerEnter={(e) => { if (e.pointerType !== "touch") { hoverRef.current = true; syncEngaged(); } }}
+        onPointerLeave={() => { hoverRef.current = false; syncEngaged(); }}
+        onFocus={() => { focusRef.current = true; syncEngaged(); }}
+        onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) { focusRef.current = false; syncEngaged(); } }}
+        className="save-cel-card pointer-events-auto relative w-[min(28rem,100%)] overflow-hidden rounded-2xl bg-white text-slate-900 shadow-2xl"
+      >
+        <div className="save-cel-band relative flex items-center gap-4 overflow-hidden bg-primary px-5 py-4 text-white">
           <SuccessMark />
           <div className="min-w-0">
-            <p className="save-cel-stamp inline-block rounded-md border-[3px] border-[#5eead4] px-3 py-0.5 text-2xl font-bold leading-tight tracking-wide text-[#5eead4]">เยี่ยมมาก!</p>
+            <p className="save-cel-stamp inline-block rounded-md border-[3px] border-sidebar-accent px-3 py-0.5 text-2xl font-semibold leading-tight tracking-wide text-sidebar-accent">เยี่ยมมาก!</p>
             <p className="mt-2 text-[17px] font-semibold leading-6">{title}</p>
           </div>
         </div>
@@ -108,7 +145,12 @@ export default function SaveCelebration({ id, title, detail, name, nextHref, nex
         </div>
 
         {/* บอกเวลาที่เหลือก่อนปิดเอง ความยาวตรงกับ CELEBRATION_VISIBLE_MS */}
-        <span aria-hidden="true" className="save-cel-timer absolute inset-x-0 bottom-0 h-1 bg-[#14b8a6]" style={{ animationDuration: `${CELEBRATION_VISIBLE_MS}ms` }} />
+        <span
+          aria-hidden="true"
+          className="save-cel-timer absolute inset-x-0 bottom-0 h-1 bg-brand-tile"
+          // แถบหยุดพร้อมตัวจับเวลา จึงบอกเวลาที่เหลือตรงกันเสมอ
+          style={{ animationDuration: `${CELEBRATION_VISIBLE_MS}ms`, animationPlayState: paused || closing ? "paused" : "running" }}
+        />
       </div>
     </div>
   );

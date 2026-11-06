@@ -1,8 +1,8 @@
 "use client";
 
 import { useLayoutEffect, useRef } from "react";
-import { GENDER_LABELS, formatThaiDate } from "@/lib/format";
-import { ageInYears } from "@/lib/data/view";
+import { birthDateReadback, pastDateReadback, type DateReadback } from "@/lib/date-readback";
+import { GENDER_LABELS } from "@/lib/format";
 import { DIABETES_TYPE_LABELS, requiredFieldStatus, type PatientFormValues } from "@/lib/patient-form";
 import RiskBadge from "./RiskBadge";
 
@@ -17,26 +17,11 @@ type Props = {
   saved: boolean;
 };
 
-/** เกินอายุนี้มักเป็นปีที่ยังพิมพ์ไม่จบ จึงยังไม่แสดงอายุ (ใช้แสดงผลเท่านั้น ไม่ใช่เกณฑ์ตรวจข้อมูล) */
-const MAX_DISPLAYED_AGE = 130;
+type RowValue = DateReadback;
 
-const FUTURE_DATE_NOTE = "เป็นวันในอนาคต";
-
-type RowValue = { text: string; warn?: boolean };
-
-/** แปลงวันที่เป็น พ.ศ. ให้เห็นทันทีว่าปีที่กรอกถูกหรือไม่ เพราะช่องวันที่ของเบราว์เซอร์อาจแสดงเป็น ค.ศ. */
-function pastDateValue(value: string, today: string): RowValue | null {
-  if (!value) return null;
-  const date = formatThaiDate(value);
-  return value > today ? { text: `${date} ${FUTURE_DATE_NOTE}`, warn: true } : { text: date };
-}
-
-function birthDateValue(value: string, today: string): RowValue | null {
-  const date = pastDateValue(value, today);
-  if (!date || date.warn) return date;
-  const age = ageInYears(value, today);
-  return age !== null && age <= MAX_DISPLAYED_AGE ? { text: `${date.text} อายุ ${age} ปี` } : date;
-}
+/** แปลงวันที่เป็น พ.ศ. ด้วยฟังก์ชันเดียวกับบรรทัดใต้ช่องวันที่ แฟ้มกับช่องกรอกจึงอ่านตรงกันเสมอ */
+const pastDateValue = pastDateReadback;
+const birthDateValue = birthDateReadback;
 
 function textValue(...parts: string[]): RowValue | null {
   const text = parts.map((part) => part.trim()).filter(Boolean).join(" ");
@@ -101,11 +86,11 @@ function RequiredProgress({ values }: { values: PatientFormValues }) {
       <div aria-hidden="true" className="flex gap-1">
         {status.map((field) => (
           <span key={field.name} className="h-1 flex-1 overflow-hidden rounded bg-white/25">
-            <span data-filled={field.filled ? "" : undefined} className="chart-required-fill block h-full rounded bg-[#5eead4]" />
+            <span data-filled={field.filled ? "" : undefined} className="chart-required-fill block h-full rounded bg-sidebar-accent" />
           </span>
         ))}
       </div>
-      <p className="mt-1.5 text-[12.5px] text-[#cfe6e3]">
+      <p className="mt-1.5 text-[12.5px] text-sidebar-text">
         {missing.length > 0 ? `ยังต้องกรอก ${missing.map((field) => field.label).join(" ")}` : "กรอกช่องจำเป็นครบแล้ว"}
       </p>
       {/* แจ้งเฉพาะตอนครบ ไม่อ่านซ้ำทุกครั้งที่พิมพ์ */}
@@ -116,7 +101,7 @@ function RequiredProgress({ values }: { values: PatientFormValues }) {
 
 function SavedStamp() {
   return (
-    <p className="flex items-center gap-2 text-sm font-medium text-[#5eead4]">
+    <p className="flex items-center gap-2 text-sm font-medium text-sidebar-accent">
       <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle className="chart-stamp-ring" cx="12" cy="12" r="10" pathLength={1} />
         <path className="chart-stamp-check" d="M7.5 12.5l3 3 6-6.5" pathLength={1} />
@@ -139,21 +124,21 @@ export default function PatientChartLabel({ values, focused, today, saving, save
       <div className="relative z-[1] -mb-px ml-4 flex overflow-hidden">
         <div
           data-active={focused === "hn" ? "" : undefined}
-          className="chart-tab min-w-0 truncate rounded-t-lg bg-[#115e59] px-3 py-1 text-[13px] font-medium tabular-nums text-white"
+          className="chart-tab min-w-0 truncate rounded-t-lg bg-primary px-3 py-1 text-[13px] font-medium tabular-nums text-white"
         >
-          HN {hn ? hn : <span className="font-normal text-[#cfe6e3]">ยังไม่ได้กรอก</span>}
+          HN {hn ? hn : <span className="font-normal text-sidebar-text">ยังไม่ได้กรอก</span>}
           {focused === "hn" ? <Caret /> : null}
         </div>
       </div>
 
       <div className="relative overflow-hidden rounded-xl bg-white">
-        <span aria-hidden="true" className="chart-spine absolute inset-y-0 left-0 z-[1] w-1 bg-[#94a3b8]" />
+        <span aria-hidden="true" className="chart-spine absolute inset-y-0 left-0 z-[1] w-1 bg-no-data" />
 
         {/* ส่วนหัวสีเข้มเป็นจุดเด่นของหน้า เพราะบอกว่ากำลังเพิ่มผู้ป่วยคนไหน จอแคบจะเห็นเฉพาะส่วนนี้ */}
-        <div className="bg-[#115e59] py-3 pl-5 pr-4 text-white lg:py-4">
+        <div className="bg-primary py-3 pl-5 pr-4 text-white lg:py-4">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
             <p className="min-w-0 break-words text-[17px] font-semibold leading-snug lg:text-lg">
-              {nameParts.length === 0 ? <span className="font-normal text-[#cfe6e3]">ยังไม่ได้กรอกชื่อ</span> : null}
+              {nameParts.length === 0 ? <span className="font-normal text-sidebar-text">ยังไม่ได้กรอกชื่อ</span> : null}
               {nameParts.map((field, index) => (
                 <span key={field}>
                   {index > 0 ? " " : ""}
@@ -174,7 +159,7 @@ export default function PatientChartLabel({ values, focused, today, saving, save
 
         <div className="hidden rounded-b-xl border border-t-0 border-slate-200 pb-3 pl-5 pr-4 pt-2 lg:block">
           <div ref={listRef} className="relative">
-            <span ref={sliderRef} aria-hidden="true" className="chart-row-slider absolute inset-x-0 top-0 -mx-2 rounded-md bg-[#d9ebe8]" />
+            <span ref={sliderRef} aria-hidden="true" className="chart-row-slider absolute inset-x-0 top-0 -mx-2 rounded-md bg-primary-tint" />
             <dl>
               {ROWS.map((row) => {
                 const value = row.read(values, today);

@@ -141,7 +141,7 @@ export default function MetricTile({ metric, dates, order, active, onActiveChang
 
             {reference ? (
               <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 border-t" style={{ top: `${referenceY}%`, borderColor: REFERENCE_COLOR }}>
-                <span className={`absolute ${referenceLabelOnLeft ? "left-0" : "right-0"} whitespace-nowrap rounded-sm bg-white/85 px-1 text-[12px] leading-[16px] text-slate-700 ${referenceY < 20 ? "top-0.5" : "bottom-0.5"}`}>{reference.label}</span>
+                <span className={`absolute ${referenceLabelOnLeft ? "left-0" : "right-0"} whitespace-nowrap rounded-sm bg-white/85 px-1 text-[12px] leading-[16px] text-[#991b1b] ${referenceY < 20 ? "top-0.5" : "bottom-0.5"}`}>{reference.label}</span>
               </div>
             ) : null}
 

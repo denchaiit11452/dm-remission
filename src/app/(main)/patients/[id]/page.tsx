@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import BackToListLink from "@/components/patients/BackToListLink";
 import DailyHistory from "@/components/patients/profile/DailyHistory";
 import LabHistory from "@/components/patients/profile/LabHistory";
 import MedicationList from "@/components/patients/profile/MedicationList";
@@ -36,9 +36,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
 
   return (
     <div className="space-y-4">
-      <Link href="/patients" className="inline-flex min-h-11 items-center text-sm font-medium text-teal-800 underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700">
-        ← กลับไปรายชื่อผู้ป่วย
-      </Link>
+      <BackToListLink />
 
       <ProfileHeader summary={summary} canManage={canManage} canConfirmNoDrug={canConfirmNoDrug(user.role)} />
 
