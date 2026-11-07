@@ -142,6 +142,27 @@ export const saveMedicationSchema = z
     }
   });
 
+/**
+ * กรอบพิกัดที่รับได้: ครอบประเทศไทยแบบหลวมๆ กันหมุดหลุดไปทะเลหรือสลับละติจูด/ลองจิจูด
+ * ไม่ใช่เกณฑ์ทางคลินิก ถ้ามีผู้ป่วยอยู่นอกประเทศต้องขยายกรอบนี้
+ */
+export const LOCATION_BOUNDS = { minLat: 5, maxLat: 21, minLng: 97, maxLng: 106 } as const;
+
+export const savePatientLocationSchema = z.object({
+  patientId: z.string().uuid("รหัสผู้ป่วยไม่ถูกต้อง"),
+  latitude: z
+    .number({ message: "กรุณาปักหมุดบนแผนที่" })
+    .min(LOCATION_BOUNDS.minLat, "หมุดอยู่นอกประเทศไทย กรุณาปักใหม่")
+    .max(LOCATION_BOUNDS.maxLat, "หมุดอยู่นอกประเทศไทย กรุณาปักใหม่"),
+  longitude: z
+    .number({ message: "กรุณาปักหมุดบนแผนที่" })
+    .min(LOCATION_BOUNDS.minLng, "หมุดอยู่นอกประเทศไทย กรุณาปักใหม่")
+    .max(LOCATION_BOUNDS.maxLng, "หมุดอยู่นอกประเทศไทย กรุณาปักใหม่"),
+  addressNote: optionalText(500, "จุดสังเกต"),
+  consentConfirmed: z.literal(true, { message: "ต้องได้รับความยินยอมจากผู้ป่วยก่อนบันทึกพิกัด" }),
+  consentGivenAt: dateKey,
+});
+
 export const stopMedicationSchema = z.object({
   id: z.string().uuid("รหัสรายการไม่ถูกต้อง"),
   endDate: dateKey,

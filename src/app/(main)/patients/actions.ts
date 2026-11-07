@@ -3,6 +3,7 @@
 // Server Actions ของข้อมูลผู้ป่วย ผลตรวจ และยา (การตรวจสิทธิ์และตรวจข้อมูลอยู่ในชั้น src/lib/data)
 import { revalidatePath } from "next/cache";
 import { saveLabRecord } from "@/lib/data/labs";
+import { savePatientLocation } from "@/lib/data/locations";
 import { saveMedication, stopMedication, voidMedication } from "@/lib/data/medications";
 import { cancelNoDrugConfirmation, confirmNoDrug } from "@/lib/data/no-drug-confirmation";
 import { createPatient, updatePatient } from "@/lib/data/patient-store";
@@ -52,6 +53,12 @@ export async function stopMedicationAction(raw: unknown) {
 
 export async function confirmNoDrugAction(raw: unknown) {
   const result = await confirmNoDrug(raw);
+  if (result.ok) revalidatePath(`/patients/${result.patientId}`);
+  return result;
+}
+
+export async function savePatientLocationAction(raw: unknown) {
+  const result = await savePatientLocation(raw);
   if (result.ok) revalidatePath(`/patients/${result.patientId}`);
   return result;
 }

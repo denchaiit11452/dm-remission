@@ -1,0 +1,65 @@
+/*
+ * การเคลื่อนไหวของแท็บภาพรวม กราฟแนวโน้ม และพิกัด ในหน้าโปรไฟล์ผู้ป่วย
+ * แต่ละแท็บมีจังหวะเดียวตอนเปิด แล้วนิ่ง ไม่มีอะไรวนซ้ำ
+ * ทุกอย่างเป็น animation ที่ใช้ fill-mode backwards ค่าสุดท้ายคือค่าจริงใน style
+ * จึงเห็นค่าครบแม้ CSS animation ไม่ทำงาน และผู้ที่ลดการเคลื่อนไหวเห็นสภาพสุดท้ายทันที
+ */
+
+/* ---------------------------------------------------------------- แถบติดตาม Remission */
+.pp-track-fill {
+  transform-origin: left center;
+  animation: pp-grow-x 900ms cubic-bezier(0.16, 1, 0.3, 1) 150ms backwards;
+}
+
+/* หมุดวันนี้และหมุดค่า HbA1c เลื่อนจากต้นไม้บรรทัดไปยังตำแหน่งจริง (left ใน style) */
+.pp-track-marker {
+  animation: pp-slide-from-start 900ms cubic-bezier(0.16, 1, 0.3, 1) 150ms backwards;
+}
+.pp-track-marker[data-row="1"] { animation-delay: 330ms; }
+
+.pp-track-goal {
+  animation: pp-fade 300ms ease-out 900ms backwards;
+}
+
+/* ข้อที่ผ่านแล้ว เครื่องหมายถูกขีดเมื่อแถบไปถึง */
+.pp-check path {
+  stroke-dasharray: 20;
+  animation: pp-draw 380ms ease-out var(--pp-check-delay, 1000ms) backwards;
+}
+
+.pp-verdict {
+  animation: pp-rise 420ms cubic-bezier(0.16, 1, 0.3, 1) 1200ms backwards;
+}
+
+/* แท่งช่วงค่าน้ำตาลรายวัน โตจากเส้นฐานของช่วงควบคุมได้ดี */
+.pp-day-range {
+  transform-origin: center;
+  animation: pp-grow-y 520ms cubic-bezier(0.16, 1, 0.3, 1) calc(200ms + var(--pp-i, 0) * 28ms) backwards;
+}
+
+/* ---------------------------------------------------------------- กราฟน้ำตาล */
+/* แถบช่วงควบคุมได้ดีเปิดออกจากกึ่งกลางก่อน แล้วเส้นค่อยวาดผ่าน (ดู useChartArrival) */
+.pp-band {
+  transform-origin: center;
+  animation: pp-grow-y 480ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* ---------------------------------------------------------------- keyframes */
+@keyframes pp-grow-x { from { transform: scaleX(0); } }
+@keyframes pp-grow-y { from { transform: scaleY(0); } }
+@keyframes pp-fade { from { opacity: 0; } }
+@keyframes pp-slide-from-start { from { left: 0%; } }
+@keyframes pp-draw { from { stroke-dashoffset: 20; } }
+@keyframes pp-rise { from { opacity: 0; transform: translateY(6px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-track-fill,
+  .pp-track-marker,
+  .pp-track-goal,
+  .pp-check path,
+  .pp-verdict,
+  .pp-day-range,
+  .pp-band {
+    animation: none;
+  }
+}

@@ -14,7 +14,7 @@ export type ProfileTabKey = (typeof PROFILE_TABS)[number]["key"];
 
 export function parseTab(v: string | string[] | undefined): ProfileTabKey {
   const s = Array.isArray(v) ? v[0] : v;
-  return PROFILE_TABS.find((t) => t.key === s)?.key ?? "history";
+  return PROFILE_TABS.find((t) => t.key === s)?.key ?? "overview";
 }
 
 export default function ProfileTabs({ patientId, active, openAlertCount }: { patientId: string; active: ProfileTabKey; openAlertCount: number }) {

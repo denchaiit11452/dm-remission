@@ -27,6 +27,8 @@ export type RemissionAssessment = {
   onDiabetesMedication: boolean;
   /** จำนวนวันที่หยุดยาเบาหวานแล้ว (null = ไม่มีประวัติการหยุดยาให้นับ) */
   medFreeDays: number | null;
+  /** วันที่หยุดยาเบาหวานครั้งล่าสุด (null = ยังใช้ยาอยู่ หรือไม่มีประวัติการหยุดยา) ใช้วาดเส้นนับวันในหน้าภาพรวม */
+  lastStopDate: string | null;
   /** มีรายการยาเบาหวานในประวัติหรือไม่ (ถ้ามี แพทย์ยืนยันว่า "ไม่เคยใช้ยา" ไม่ได้) */
   hasDiabetesDrugHistory: boolean;
   reasons: string[];
@@ -87,6 +89,7 @@ export function assessRemission(input: RemissionInput): RemissionAssessment {
     latestHba1c,
     onDiabetesMedication,
     medFreeDays,
+    lastStopDate: onDiabetesMedication ? null : lastStopDate,
     hasDiabetesDrugHistory,
     reasons,
   });

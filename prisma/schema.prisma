@@ -209,7 +209,7 @@ model Patient {
   @@map("patients")
 }
 
-/// พิกัดบ้านผู้ป่วย (เห็นได้เฉพาะ Admin/แพทย์ ตรวจสิทธิ์ที่ฝั่ง server)
+/// พิกัดบ้านผู้ป่วย (เห็นได้: Admin/แพทย์/พยาบาล, ปักหมุดได้: Admin/พยาบาล ตรวจสิทธิ์ที่ฝั่ง server ใน src/lib/data/locations.ts)
 /// สร้างได้ก็ต่อเมื่อมี consentGivenAt เท่านั้น
 model PatientLocation {
   id                  String         @id @default(uuid()) @db.Uuid
